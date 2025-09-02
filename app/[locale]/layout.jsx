@@ -18,7 +18,7 @@ export default async function LocaleLayout({ children, params }) {
       <ScrollToTopLenis/>
       <Navigation currentLocale={locale} nav={nav} />
       <div className="pt-40">{children}</div>
-      <Footer globals={globals} locale={locale}/>
+      <Footer locale={locale}/>
       </SmoothScrolling>
     </>
   );
