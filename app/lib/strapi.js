@@ -1,5 +1,5 @@
-export const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-export const STRAPI_TOKEN = process.env.STRAPI_TOKEN || "";
+const STRAPI_URL = process.env.STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_URL;
+const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
 
 function buildUrl(path, params = {}) {
   const usp = new URLSearchParams();
@@ -184,15 +184,6 @@ function mapEvent(entry) {
   };
 }
 
-export async function getSiteSettings({ locale = "fr", next = { revalidate: 0 } } = {}) {
-  const params = {
-    ...(locale ? { locale } : {}),
-    "populate": "*"
-
-  };
-  const data = await doFetch(`/api/site-setting`, { params, next });
-  return normalizeEntry(data?.data);
-}
 
 export async function getEventBySlug(slug, {
   locale,

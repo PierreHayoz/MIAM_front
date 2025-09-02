@@ -1,8 +1,8 @@
 // scripts/seed-events.mjs
 // Node 18+ (fetch global). Crée N events dans Strapi v4 via l'API REST.
 
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-const STRAPI_TOKEN = process.env.STRAPI_TOKEN || "716d4b5b4da50d8706041be50691c3e945b421ade73b9aea5efdcefed6d8e60c693c1778c6db136ffb0cd22614ef2e2560240afaef482bd5a7f70ce8ba18bc696ebe5d231c86962a0d3b4df5ad1c025d7801932413b9f48b2f7447c555c8755377909b47fac64610604c43233369f504ad80f0cf5516f81278d3c2d677ad53d0"; // API Token (type: Full access ou avec perms create)
+const STRAPI_URL = process.env.STRAPI_URL
+const STRAPI_TOKEN = process.env.STRAPI_TOKEN
 const COUNT = Number(process.env.COUNT || 15);
 const LOCALE = process.env.LOCALE || "fr";
 
