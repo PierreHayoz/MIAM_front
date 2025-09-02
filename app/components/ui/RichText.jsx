@@ -67,7 +67,7 @@ function renderBlock(node, idx) {
       const L = Math.min(Math.max(Number(node.level || 2), 1), 6);
       const Tag = `h${L}`;
       const cls = L === 1 ? "text-xl" : L === 2 ? "text-xl" : L === 3 ? "text-xl" : "text-xl";
-      return <Tag key={idx} className={`${cls}  text-MIAMblack  mb-1`}>{children}</Tag>;
+      return <Tag key={idx} className={`${cls}  text-MIAMblack `}>{children}</Tag>;
     }
 
     case "list": {
@@ -79,8 +79,8 @@ function renderBlock(node, idx) {
     }
 
     case "list-item":
-      return <li className="list-disc" key={idx}>{children}</li>;
-
+      return (
+      <div className="flex"><div className=""></div><li className="text-sm text-MIAMgreytext list-disc" key={idx}>{children}</li></div>);
     case "quote":
       return <blockquote key={idx} className="border-l-4 pl-3 italic my-3 text-MIAMgrey">{children}</blockquote>;
 
