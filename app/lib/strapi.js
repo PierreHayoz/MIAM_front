@@ -1,5 +1,5 @@
-const STRAPI_URL = process.env.STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_URL;
-const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+export const STRAPI_URL = process.env.STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_URL;
+export const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 function buildUrl(path, params = {}) {
   const usp = new URLSearchParams();
