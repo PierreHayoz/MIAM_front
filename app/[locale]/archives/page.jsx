@@ -1,13 +1,24 @@
-// file: app/[locale]/archives/page.jsx
 import RevealList from "@/app/components/reveal/RevealList";
-import { getEvents } from "@/app/lib/strapi"; // <- ton fichier strapi.js
-
+import { getEvents } from "@/app/lib/strapi";
+import { Suspense } from "react";                // 👈
 export const revalidate = 3600; // 1h
-export const metadata = {
-  title: "Archives — MIAM",
-  description: "Tous les événements passés, regroupés par année.",
-};
 
+
+export async function generateMetadata({ params: { locale } }) {
+  // construit le pathname de la page courante
+  const pathname = `/${locale}/archives`;
+  try {
+    const languages = await resolveAlternates(pathname);
+    return {
+      alternates: {
+        languages, // <- format attendu par Next Metadata
+      },
+    };
+  } catch {
+    // fallback safe pour ne jamais casser le build
+    return {};
+  }
+}
 // Helpers -------------------------------------------------
 const TZ = "Europe/Zurich";
 const fmt = new Intl.DateTimeFormat("fr-CH", {
@@ -107,39 +118,40 @@ export default async function Page({ params: { locale } }) {
           {years.map((year) => (
             <div key={year}>
               <h3 className="text-xl mb-2 opacity-70">{year}</h3>
-
-              <RevealList
-                items={byYear[year]}
-                getKey={eventKey}
-                getHref={(e) => eventHref(e, locale)}
-                variant="image"
-                getThumbnail={eventThumb}
-                getTitle={(e) => {
-                  const tags = eventTags(e);
-                  return (
-                    <div className="grid grid-cols-2 gap-2 items-start">
-                      <div>
-                        <div>{e.title}</div>
-                        {tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-1 text-xs text-MIAMgreytext">
-                            {tags.map((t, i) => (
-                              <span
-                                key={`${e.slug}-tag-${i}`}
-                                className="px-2 py-0.5 border border-MIAMgreytext/40 rounded-full"
-                              >
-                                {t}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+              <Suspense fallback={null}>
+                <RevealList
+                  items={byYear[year]}
+                  getKey={eventKey}
+                  getHref={(e) => eventHref(e, locale)}
+                  variant="image"
+                  getThumbnail={eventThumb}
+                  getTitle={(e) => {
+                    const tags = eventTags(e);
+                    return (
+                      <div className="grid grid-cols-2 gap-2 items-start">
+                        <div>
+                          <div>{e.title}</div>
+                          {tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-1 text-xs text-MIAMgreytext">
+                              {tags.map((t, i) => (
+                                <span
+                                  key={`${e.slug}-tag-${i}`}
+                                  className="px-2 py-0.5 border border-MIAMgreytext/40 rounded-full"
+                                >
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right text-sm text-MIAMgreytext">
+                          {formatEventDateRange(e)}
+                        </div>
                       </div>
-                      <div className="text-right text-sm text-MIAMgreytext">
-                        {formatEventDateRange(e)}
-                      </div>
-                    </div>
-                  );
-                }}
-              />
+                    );
+                  }}
+                />
+              </Suspense>
             </div>
           ))}
 
@@ -154,7 +166,3 @@ export default async function Page({ params: { locale } }) {
   );
 }
 
-// (optionnel) si tu connais tes locales
-export async function generateStaticParams() {
-  return [{ locale: "fr" }, { locale: "en" }, { locale: "de" }];
-}

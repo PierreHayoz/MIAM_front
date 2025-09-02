@@ -61,13 +61,13 @@ function renderBlock(node, idx) {
 
   switch (node?.type) {
     case "paragraph":
-      return <p key={idx} className="leading-tight mb-4">{children}</p>;
+      return <p key={idx} className="leading-tight text-MIAMgreytext mb-8 text-sm">{children}</p>;
 
     case "heading": {
       const L = Math.min(Math.max(Number(node.level || 2), 1), 6);
       const Tag = `h${L}`;
       const cls = L === 1 ? "text-xl" : L === 2 ? "text-xl" : L === 3 ? "text-xl" : "text-xl";
-      return <Tag key={idx} className={`${cls}  text-MIAMblack mt-4 `}>{children}</Tag>;
+      return <Tag key={idx} className={`${cls}  text-MIAMblack  mb-1`}>{children}</Tag>;
     }
 
     case "list": {

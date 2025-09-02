@@ -4,6 +4,7 @@ const nextConfig = {
     images: {
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "1337" },
+      { protocol: "https", hostname: "miam.tipper.watch", port: "3001" },
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },

@@ -36,14 +36,20 @@ export async function getPageBySlug(slug, { locale = "fr", preview = false } = {
     "pagination[pageSize]": 1,
     "populate[blocks][on][blocks.events-list][populate]": "true",
     // tes populates existants…
+    "populate[blocks][on][blocks.paragraphes][populate]": "*",
+
     "populate[blocks][on][blocks.banner][populate]": "*",
     "populate[blocks][on][blocks.paragraph][populate]": "*",
+    "populate[blocks][on][blocks.paragraphes][populate]": "*",
     "populate[blocks][on][blocks.mid-paragraph][populate]": "*",
     "populate[blocks][on][blocks.gallery-media][populate][gallery][populate]": "*",
-    "populate[blocks][populate][pageIntro]" : "*"
+    "populate[blocks][on][blocks.paragraphes][populate]": "*",
+
+    "populate[blocks][populate][pageIntro]" : "*",
   };
 
   const data = await doFetch(`/api/pages`, { params, next: { revalidate: 0 } });
+  console.log(data)
   return normalizeEntry(data?.data?.[0]);
 }
 export async function getGlobal({

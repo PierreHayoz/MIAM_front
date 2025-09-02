@@ -5,6 +5,7 @@ import CardsListServer from "../cards/CardsList";
 import GalleryMedia from "./GalleryMedia";
 import BannerImage from "./BannerImage";
 import { getEvents } from "@/app/lib/strapi"; // 👈 manquait
+import RichTextServer from "../ui/RichText";
 
 // utils
 const todayISO = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -78,7 +79,6 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
         break;
       }
 
-      // app/components/cms/RenderBlocks.jsx (extrait du case "blocks.paragraph")
 case "blocks.paragraph": {
   const isList = b.type === "list";
   const variant =
@@ -112,7 +112,18 @@ case "blocks.paragraph": {
   );
   break;
 }
-
+case "blocks.paragraphes": {
+  // ici tu utilises ton nouveau composant
+  console.log()
+  out.push(
+    <div key={`paragraphes-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 pb-8">
+      <div className="md:col-start-2 md:col-span-2 col-span-4">
+        <RichTextServer value={b.paragraphe} />
+      </div>
+    </div>
+  );
+  break;
+}
 
       case "blocks.banner": {
         const media = b.image ?? b.media ?? b.photo ?? b.file ?? b.url;
