@@ -18,7 +18,7 @@ export default async function Page({ params, searchParams }) {
       <div className="grid grid-cols-4 gap-2">
         <h1 className="text-3xl md:col-span-1 col-span-4">{page.pageTitle}</h1>
         <div className="col-span-4 md:col-span-2">
-          <Paragraphs title={page.pageHeading} text={page.pageIntro} />
+          <Paragraphs title={page.pageHeading} richText={page.pageIntro} />
         </div>
       </div>
 

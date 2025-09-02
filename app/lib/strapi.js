@@ -34,18 +34,32 @@ export async function getPageBySlug(slug, { locale = "fr", preview = false } = {
     "filters[slug][$eq]": slug,
     "locale": locale,
     "pagination[pageSize]": 1,
-"populate[blocks][on][blocks.events-list][populate]": "true",
+    "populate[blocks][on][blocks.events-list][populate]": "true",
     // tes populates existants…
     "populate[blocks][on][blocks.banner][populate]": "*",
     "populate[blocks][on][blocks.paragraph][populate]": "*",
     "populate[blocks][on][blocks.mid-paragraph][populate]": "*",
     "populate[blocks][on][blocks.gallery-media][populate][gallery][populate]": "*",
+    "populate[blocks][populate][pageIntro]" : "*"
   };
 
   const data = await doFetch(`/api/pages`, { params, next: { revalidate: 0 } });
   return normalizeEntry(data?.data?.[0]);
 }
+export async function getGlobal({
+  locale = "fr",
+  preview = false,
+  next = { revalidate: 600 }, // ajuste le cache si besoin
+} = {}) {
+  const params = {
+    ...(preview ? { publicationState: "preview" } : {}),
+    ...(locale ? { locale } : {}),
+    "populate":"*"// nécessite que tu aies bien ajouté socialLinks sur Global
+  };
 
+  const data = await doFetch(`/api/global`, { params, next });
+  return normalizeEntry(data?.data);
+}
 // 👉 nouveau : récupérer une traduction via l’ID de l’entrée
 export async function getPageById(id, { locale = "fr", preview = false } = {}) {
   const params = {
@@ -167,12 +181,12 @@ function mapEvent(entry) {
 export async function getSiteSettings({ locale = "fr", next = { revalidate: 0 } } = {}) {
   const params = {
     ...(locale ? { locale } : {}),
-    "populate":"*"
-    
+    "populate": "*"
+
   };
   const data = await doFetch(`/api/site-setting`, { params, next });
   return normalizeEntry(data?.data);
-} 
+}
 
 export async function getEventBySlug(slug, {
   locale,
@@ -261,6 +275,66 @@ export async function getEvents({
   return all.map(mapEvent);
 }
 
+// --- en bas de app/lib/strapi.js (et exporte) ---
+export async function getUpcomingEvents({
+  locale = "fr",
+  limit = 3,
+  preview = false,
+  excludeDocumentId,
+  excludeSlug,
+  categories = [], // tableau de noms (ta mapEvent renvoie des noms)
+  next = { revalidate: 300 },
+} = {}) {
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Base: événements à venir (startDate >= today OU endDate >= today)
+  const base = {
+    ...(preview ? { publicationState: "preview" } : {}),
+    ...(locale ? { locale } : {}),
+    "filters[$or][0][startDate][$gte]": today,
+    "filters[$or][1][endDate][$gte]": today,
+    ...(excludeDocumentId ? { "filters[documentId][$ne]": excludeDocumentId } : {}),
+    ...(excludeSlug ? { "filters[slug][$ne]": excludeSlug } : {}),
+    "sort[0]": "startDate:asc",
+    "pagination[pageSize]": String(limit),
+    "populate[cover]": "true",
+    "populate[event_categories]": "true",
+    "populate[gallery][populate][image]": "true",
+  };
+
+  // 1) Essai avec filtre de catégories (si fourni)
+  let primary = [];
+  if (categories?.length) {
+    const byCats = { ...base };
+    categories.forEach((name, i) => {
+      byCats[`filters[event_categories][name][$in][${i}]`] = String(name);
+    });
+    const data = await doFetch(`/api/events`, { params: byCats, next }).catch(() => null);
+    primary = data?.data ?? [];
+  }
+
+  // 2) Compléter sans filtre si on n'en a pas assez
+  let results = [...primary];
+  if (results.length < limit) {
+    const all = await doFetch(`/api/events`, {
+      params: { ...base, "pagination[pageSize]": String(limit * 2) },
+      next,
+    }).catch(() => null);
+    const extra = all?.data ?? [];
+
+    const seen = new Set(results.map(r => r.documentId || r.id));
+    for (const r of extra) {
+      const key = r.documentId || r.id;
+      if (!seen.has(key)) {
+        results.push(r);
+        seen.add(key);
+      }
+      if (results.length >= limit) break;
+    }
+  }
+
+  return results.slice(0, limit).map(mapEvent);
+}
 
 
 
@@ -316,7 +390,7 @@ export async function getNavigation({ tree = "navigation", locale = "fr", type =
     const href = external ? candidate : withLocale(candidate);
 
     const childrenSrc = Array.isArray(n.items) ? n.items :
-                        Array.isArray(n.children) ? n.children : [];
+      Array.isArray(n.children) ? n.children : [];
     const children = childrenSrc.map(mapItem);
 
     return {

@@ -78,28 +78,41 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
         break;
       }
 
-      case "blocks.paragraph": {
-        const isList = b.type === "list";
-        const variant =
-          b.variant || (isList ? (b.items?.[0]?.photo ? "avatar" : "text") : "text");
+      // app/components/cms/RenderBlocks.jsx (extrait du case "blocks.paragraph")
+case "blocks.paragraph": {
+  const isList = b.type === "list";
+  const variant =
+    b.variant || (isList ? (b.items?.[0]?.photo ? "avatar" : "text") : "text");
 
-        out.push(
-          <div key={`paragraph-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 pb-8">
-            <div className="md:col-start-2 md:col-span-2 col-span-4">
-              <Paragraphs
-                title={b.title}
-                subtitle={b.subtitle}
-                text={b.text}
-                type={isList ? "list" : undefined}
-                items={isList ? b.items || [] : []}
-                variant={variant}
-                revealProps={{ revealSide: "right", arrow: true }}
-              />
-            </div>
-          </div>
-        );
-        break;
-      }
+  const isRich = (v) =>
+    Array.isArray(v) || (v && typeof v === "object" && (v.type || v.children));
+
+  const title = b.title;
+  const subtitle = isRich(b.subtitle) ? undefined : b.subtitle;
+  const subtitleRichText = isRich(b.subtitle) ? b.subtitle : undefined;
+  const text = isRich(b.text) ? undefined : b.text;
+  const richText = isRich(b.text) ? b.text : undefined;
+
+  out.push(
+    <div key={`paragraph-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 pb-8">
+      <div className="md:col-start-2 md:col-span-2 col-span-4">
+        <Paragraphs
+          title={title}
+          subtitle={subtitle}
+          subtitleRichText={subtitleRichText}   // 👈
+          text={text}
+          richText={richText}                   // 👈
+          type={isList ? "list" : undefined}
+          items={isList ? (b.items || []) : []}
+          variant={variant}
+          revealProps={{ revealSide: "right", arrow: true }}
+        />
+      </div>
+    </div>
+  );
+  break;
+}
+
 
       case "blocks.banner": {
         const media = b.image ?? b.media ?? b.photo ?? b.file ?? b.url;
@@ -133,7 +146,6 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
       }
 
       default:
-        // bloc inconnu → ignore
         break;
     }
   }

@@ -37,7 +37,7 @@ export default function IllustrationList() {
         <div className="w-full fixed h-screen bottom-0 left-0 -z-1 ">
             <motion.div style={{ y }} className="gap-4 p-4 h-[400vh] w-full ">
                 {three.map((src, i) => (
-                    <div className="">
+                    <div key={i} className="">
                         <Image
                         priority
                             key={src}

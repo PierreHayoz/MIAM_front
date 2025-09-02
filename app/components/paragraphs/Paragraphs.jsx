@@ -1,8 +1,10 @@
+// app/components/paragraphs/Paragraphs.jsx
 import React from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import RevealList from "../reveal/RevealList";
 import { mediaURL } from "../../lib/strapi";
+import RichTextServer from "../ui/RichText"; // 👈 on l'utilise ici
 
 function initials(name = "?") {
   return String(name).split(/\s+/).filter(Boolean).slice(0,2).map(s => s[0]?.toUpperCase()).join("");
@@ -15,32 +17,49 @@ const pickThumb = (m) =>
   mediaURL(m.photo) || mediaURL(m.thumbnail) || mediaURL(m.image) ||
   m.photo || m.thumbnail || m.image || "";
 
+// 👇 petit helper : vrai si on a un nœud richText (Slate-like)
+const isRich = (v) =>
+  Array.isArray(v) ||
+  (v && typeof v === "object" && (v.type || v.children));
+
 const Paragraphs = ({
   title,
   text,
-  type,
+  richText,              // 👈 nouveau : accepte un richText (array/obj)
   subtitle,
+  subtitleRichText,      // 👈 nouveau : sous-titre en richText (optionnel)
+  type,
   items = [],
   getKey = (m, i) => m.id ?? m.slug ?? pickLabel(m) ?? i,
   getTitle,
   getThumbnail = pickThumb,
-  getDescription = pickDescription,
+  getDescription = pickDescription, // peut aussi retourner du JSX si tu veux
   getHref,
   variant = "avatar",
   revealProps = {},
 }) => {
-  // 👉 CAS NON-LISTE — il faut retourner ici
+  // 👉 CAS NON-LISTE
   if (type !== "list") {
     return (
       <div>
         {title && <h2 className="text-xl text-MIAMblack">{title}</h2>}
-        {subtitle && <h3 className="text-sm text-MIAMgreytext pt-1">{subtitle}</h3>}
-        {text && <p className="text-sm text-MIAMgreytext pt-2">{text}</p>}
+
+        {/* subtitle : string ou rich */}
+        {subtitleRichText
+          ? <div className="text-sm text-MIAMgreytext pt-1"><RichTextServer value={subtitleRichText} /></div>
+          : (subtitle ? <h3 className="text-sm text-MIAMgreytext pt-1">{subtitle}</h3> : null)
+        }
+
+        {/* text : string ou rich */}
+        {richText
+          ? <div className="text-sm text-MIAMgreytext pt-2"><RichTextServer value={richText} /></div>
+          : (text ? <p className="text-sm text-MIAMgreytext pt-2">{text}</p> : null)
+        }
       </div>
     );
   }
 
-  // Tolérance: si jamais Strapi renvoie un objet style { data: [...] }
+  // Tolérance: si Strapi renvoie { data: [...] }
   const normalizedItems = Array.isArray(items)
     ? items
     : Array.isArray(items?.data)
@@ -75,7 +94,11 @@ const Paragraphs = ({
       ) : null}
       <div className="text-white max-w-xs leading-tight">
         <div className="font-medium">{pickLabel(m)}</div>
-        {pickDescription(m) && <div className="opacity-80">{pickDescription(m)}</div>}
+        {/* description possible en richText via m.descriptionRich, sinon texte */}
+        {isRich(m.descriptionRich)
+          ? <div className="opacity-80"><RichTextServer value={m.descriptionRich} /></div>
+          : (pickDescription(m) && <div className="opacity-80">{pickDescription(m)}</div>)
+        }
       </div>
     </div>
   );
@@ -83,7 +106,10 @@ const Paragraphs = ({
   const defaultTextReveal = (m) => (
     <div className="text-white max-w-sm leading-tight">
       <div className="font-medium">{pickLabel(m)}</div>
-      {pickDescription(m) && <div className="opacity-80">{pickDescription(m)}</div>}
+      {isRich(m.descriptionRich)
+        ? <div className="opacity-80"><RichTextServer value={m.descriptionRich} /></div>
+        : (pickDescription(m) && <div className="opacity-80">{pickDescription(m)}</div>)
+      }
     </div>
   );
 
@@ -94,8 +120,17 @@ const Paragraphs = ({
   return (
     <div>
       {title && <h2 className="text-xl text-MIAMblack">{title}</h2>}
-      {subtitle && <h3 className="text-sm text-MIAMgreytext pt-1">{subtitle}</h3>}
-      {text && <p className="text-sm text-MIAMgreytext pt-2">{text}</p>}
+
+      {/* subtitle + text au-dessus de la liste */}
+      {subtitleRichText
+        ? <div className="text-sm text-MIAMgreytext pt-1"><RichTextServer value={subtitleRichText} /></div>
+        : (subtitle ? <h3 className="text-sm text-MIAMgreytext pt-1">{subtitle}</h3> : null)
+      }
+
+      {richText
+        ? <div className="text-sm text-MIAMgreytext pt-2"><RichTextServer value={richText} /></div>
+        : (text ? <p className="text-sm text-MIAMgreytext pt-2">{text}</p> : null)
+      }
 
       {hasItems ? (
         <RevealList
@@ -105,6 +140,7 @@ const Paragraphs = ({
           getHref={getHref}
           variant={variant}
           getThumbnail={getThumbnail}
+          // 👇 tu peux passer une fonction qui renvoie du JSX (ex: <RichTextServer />)
           getDescription={getDescription}
           containerClassName="relative text-sm"
           rowClassName="border-b py-2 group relative"

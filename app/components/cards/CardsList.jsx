@@ -52,7 +52,7 @@ export default function CardsListServer({
         </div>
       </aside>
 
-      <main className="col-span-4 md:col-span-3">
+      <main className="col-span-4 md:col-span-3  px-4">
         <p className="text-sm text-MIAMgrey mb-4">
           {filtered.length} résultat{filtered.length > 1 ? 's' : ''}
         </p>

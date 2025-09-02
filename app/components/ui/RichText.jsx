@@ -66,8 +66,8 @@ function renderBlock(node, idx) {
     case "heading": {
       const L = Math.min(Math.max(Number(node.level || 2), 1), 6);
       const Tag = `h${L}`;
-      const cls = L === 1 ? "text-4xl" : L === 2 ? "text-3xl" : L === 3 ? "text-2xl" : "text-xl";
-      return <Tag key={idx} className={`${cls} font-semibold mt-4 mb-2`}>{children}</Tag>;
+      const cls = L === 1 ? "text-xl" : L === 2 ? "text-xl" : L === 3 ? "text-xl" : "text-xl";
+      return <Tag key={idx} className={`${cls}  text-MIAMblack mt-4 `}>{children}</Tag>;
     }
 
     case "list": {
@@ -79,7 +79,7 @@ function renderBlock(node, idx) {
     }
 
     case "list-item":
-      return <li key={idx}>{children}</li>;
+      return <li className="list-disc" key={idx}>{children}</li>;
 
     case "quote":
       return <blockquote key={idx} className="border-l-4 pl-3 italic my-3 text-MIAMgrey">{children}</blockquote>;

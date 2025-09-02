@@ -16,25 +16,25 @@ export default function GalleryMedia({ items = [] }) {
         if (!src) return null; // rien à afficher
 
         return (
-          <div key={i} className="relative py-4 col-span-3 not-even:col-span-2 not-odd:col-start-2">
-            {isVideo ? (
-              <video controls className="w-full h-auto">
-                <source src={src} type={mime || undefined} />
-              </video>
-            ) : (
-              <div className="relative group">
-                <Image
-                  src={src}
-                  alt={alt}
-                  width={1200}
-                  height={800}
-                  className="mix-blend-difference w-full h-auto"
-                />
-              </div>
-            )}
-            {m.caption && (
-              <div className="mt-2 text-xs text-MIAMgreytext">{m.caption}</div>
-            )}
+          <div key={i}>
+            <div  className="relative py-4 col-span-2 nth-of-type-[1]:col-start-2">
+              {isVideo ? (
+                <video controls className="w-full h-auto">
+                  <source src={src} type={mime || undefined} />
+                </video>
+              ) : (
+                <div className="relative group">
+                  <Image
+                    src={src}
+                    alt={m.caption}
+                    width={1200}
+                    height={800}
+                    className="mix-blend-darken w-full h-auto"
+                  />
+                  <div className="text-xs w-full text-center">{m.caption}</div>
+                </div>
+              )}
+            </div>
           </div>
         );
       })}
