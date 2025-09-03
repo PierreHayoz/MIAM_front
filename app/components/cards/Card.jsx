@@ -150,7 +150,7 @@ const Card = ({
           </div>
         ) : (
           description && (
-            <p className="leading-tight block pt-1 pb-4 line-clamp-3">
+            <p className="leading-tight block line-clamp-3">
               {description}
             </p>
           )

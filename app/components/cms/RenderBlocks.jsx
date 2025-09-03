@@ -22,7 +22,6 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
     switch (type) {
       case "blocks.events-list": {
         // config bloc
-
         const cfg = {
           defaultRange: b.defaultRange ?? "all",
           showFilters: b.showFilters ?? true,
@@ -94,7 +93,7 @@ case "blocks.paragraph": {
   const richText = isRich(b.text) ? b.text : undefined;
 
   out.push(
-    <div key={`paragraph-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 pb-8">
+    <div key={`paragraph-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4">
       <div className="md:col-start-2 md:col-span-2 col-span-4">
         <Paragraphs
           title={title}

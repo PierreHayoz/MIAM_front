@@ -22,8 +22,6 @@ export default async function Page({ params, searchParams }) {
           <RichTextServer value={page.parag}/>
         </div>
       </div>
-
-      {/* 👇 passe locale + searchParams pour que le bloc “events-list” fonctionne */}
       <RenderBlocks blocks={page.blocks || []} locale={locale} searchParams={sp} />
     </div>
   );

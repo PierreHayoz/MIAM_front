@@ -61,13 +61,13 @@ function renderBlock(node, idx) {
 
   switch (node?.type) {
     case "paragraph":
-      return <p key={idx} className="leading-tight text-MIAMgreytext mb-8 text-sm">{children}</p>;
+      return <p key={idx} className="leading-tight text-MIAMgreytext mb-2 text-sm ">{children}</p>;
 
     case "heading": {
       const L = Math.min(Math.max(Number(node.level || 2), 1), 6);
       const Tag = `h${L}`;
       const cls = L === 1 ? "text-xl" : L === 2 ? "text-xl" : L === 3 ? "text-xl" : "text-xl";
-      return <Tag key={idx} className={`${cls}  text-MIAMblack `}>{children}</Tag>;
+      return <Tag key={idx} className={`${cls}  text-MIAMblack mb-2`}>{children}</Tag>;
     }
 
     case "list": {
@@ -75,12 +75,12 @@ function renderBlock(node, idx) {
       const items = (node.children ?? []).map((li, i) => (
         <li key={`${idx}-li${i}`}>{(li.children ?? []).map((c, j) => renderInline(c, `${idx}-li${i}-l${j}`))}</li>
       ));
-      return <Tag key={idx} className="list-inside ml-5 my-2">{items}</Tag>;
+      return <Tag key={idx} className="list-inside text-MIAMgreytext text-sm leading-tight mb-2">{items}</Tag>;
     }
 
     case "list-item":
       return (
-      <div className="flex"><div className=""></div><li className="text-sm text-MIAMgreytext list-disc" key={idx}>{children}</li></div>);
+      <li className="text-sm text-MIAMgreytext mb-2 bg-green-600" key={idx}>{children}</li>);
     case "quote":
       return <blockquote key={idx} className="border-l-4 pl-3 italic my-3 text-MIAMgrey">{children}</blockquote>;
 

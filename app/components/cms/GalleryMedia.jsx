@@ -17,7 +17,7 @@ export default function GalleryMedia({ items = [] }) {
 
         return (
           <div key={i}>
-            <div  className="relative py-4 col-span-2 nth-of-type-[1]:col-start-2">
+            <div  className="relative py-4 col-span-4 ">
               {isVideo ? (
                 <video controls className="w-full h-auto">
                   <source src={src} type={mime || undefined} />

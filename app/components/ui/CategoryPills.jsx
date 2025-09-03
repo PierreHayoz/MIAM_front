@@ -8,7 +8,7 @@ export default function CategoryPills({
   if (!Array.isArray(categories) || categories.length === 0) return null;
 
   return (
-    <div className={`flex gap-1 flex-wrap ${className}`}>
+    <div className={`flex pt-4 gap-1 flex-wrap ${className}`}>
       {categories.map((c, i) => (
         <div
           key={`${c}-${i}`}

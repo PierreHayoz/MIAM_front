@@ -28,14 +28,14 @@ export default async function EventPage({ params }) {
 
     const timeRange = formatTimeRange(e);
 
-  // ✨ SUGGESTIONS : 3 prochains
-  const suggestions = await getUpcomingEvents({
-    locale,
-    limit: 3,
-    excludeDocumentId: e.documentId,        // évite la même fiche (autres locales)
-    excludeSlug: e.slug,                     // ceinture + bretelles
-    categories: Array.isArray(e.categories) ? e.categories : [],
-  });
+    // ✨ SUGGESTIONS : 3 prochains
+    const suggestions = await getUpcomingEvents({
+        locale,
+        limit: 3,
+        excludeDocumentId: e.documentId,        // évite la même fiche (autres locales)
+        excludeSlug: e.slug,                     // ceinture + bretelles
+        categories: Array.isArray(e.categories) ? e.categories : [],
+    });
 
     return (
         <article className="px-4">
@@ -96,7 +96,7 @@ export default async function EventPage({ params }) {
                             >
                                 Acheter des billets
                             </Link>
-                            
+
                         </div>
                     )}
                 </header>
@@ -118,37 +118,37 @@ export default async function EventPage({ params }) {
 
             {/* GALERIE */}
             {Array.isArray(e.gallery) && e.gallery.length > 0 && (
-                <section className="grid grid-cols-4 mt-8">
+                <section className="grid grid-cols-2 mt-8 gap-4">
                     <GalleryMedia items={e.gallery} />
                 </section>
             )}
 
 
             {Array.isArray(suggestions) && suggestions.length > 0 && (
-  <section className="mt-12">
-    <h2 className="text-lg mb-4">À venir</h2>
-    <div className="grid gap-4 md:grid-cols-3">
-      {suggestions.map((s, i) => (
-        <Card
-          key={`${s.documentId || s.id}-${s.slug}`}
-          index={i}
-          locale={locale}
-          slug={s.slug}
-          title={s.title}
-          thumbnail={s.thumbnail}          // ou eventThumb(s) si tu préfères sa logique
-          startDate={s.startDate}
-          endDate={s.endDate}
-          startTime={s.startTime}
-          endTime={s.endTime}
-          description={s.description}
-          descriptionBlocks={s.descriptionBlocks}
-          contentBlocks={s.contentBlocks}
-          categories={s.categories}        // ta mapEvent retourne des NOMS
-        />
-      ))}
-    </div>
-  </section>
-)}
+                <section className="mt-24 pb-24">
+                    <h2 className="text-lg mb-4">Autres événements au programme</h2>
+                    <div className="grid gap-4 md:grid-cols-3">
+                        {suggestions.map((s, i) => (
+                            <Card
+                                key={`${s.documentId || s.id}-${s.slug}`}
+                                index={i}
+                                locale={locale}
+                                slug={s.slug}
+                                title={s.title}
+                                thumbnail={s.thumbnail}          // ou eventThumb(s) si tu préfères sa logique
+                                startDate={s.startDate}
+                                endDate={s.endDate}
+                                startTime={s.startTime}
+                                endTime={s.endTime}
+                                description={s.description}
+                                descriptionBlocks={s.descriptionBlocks}
+                                contentBlocks={s.contentBlocks}
+                                categories={s.categories}        // ta mapEvent retourne des NOMS
+                            />
+                        ))}
+                    </div>
+                </section>
+            )}
         </article>
     );
 }

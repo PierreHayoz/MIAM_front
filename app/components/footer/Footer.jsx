@@ -48,7 +48,7 @@ export default async function Footer() {
   };
 
   return (
-    <div className="w-full md:grid grid-cols-4 p-4 flex flex-col md:gap-0 gap-4">
+    <div className="pt-40 w-full md:grid grid-cols-4 p-4 flex flex-col md:gap-0 gap-4">
       <div className="col-span-4 md:col-span-1">
         <Newsletter />
       </div>
@@ -76,11 +76,9 @@ export default async function Footer() {
           )}
         </ul>
       </div>
-
       <div>
         <ul>
           <li className="font-semibold">Réseaux sociaux</li>
-
           {socials.length > 0 ? (
             socials.map((s, i) => (
               <li key={`${s.label}-${i}`} className="text-MIAMgreytext">
