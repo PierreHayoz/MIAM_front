@@ -5,7 +5,7 @@ export default function GalleryMedia({ items = [] }) {
   if (!items?.length) return null;
 
   return (
-    <>
+    <div className="col-span-3 ">
       {items.map((m, i) => {
         const media = m.media || m.file || m.image || m.photo || m; // tolérant
         const src = mediaSrc(media);
@@ -17,13 +17,13 @@ export default function GalleryMedia({ items = [] }) {
 
         return (
           <div key={i}>
-            <div  className="relative py-4 col-span-4 ">
+            <div  className="relative py-4  ">
               {isVideo ? (
                 <video controls className="w-full h-auto">
                   <source src={src} type={mime || undefined} />
                 </video>
               ) : (
-                <div className="relative group">
+                <div className="relative w-full ">
                   <Image
                     src={src}
                     alt={m.caption}
@@ -38,6 +38,6 @@ export default function GalleryMedia({ items = [] }) {
           </div>
         );
       })}
-    </>
+    </div>
   );
 }
