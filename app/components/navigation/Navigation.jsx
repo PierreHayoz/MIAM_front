@@ -16,11 +16,12 @@ function NavItemDesktop({ item }) {
         className="px-3 py-2 hover:underline"
       >
         {title}
-        {children?.length ? " ▾" : ""}
+        
+        {children?.length ? "▾" : ""}
       </Link>
 
       {children?.length ? (
-        <ul className="absolute hidden group-hover:block bg-white shadow rounded mt-1 min-w-40 p-1 z-50">
+        <ul className="absolute hidden group-hover:block bg-MIAMwhite mt-1 text-nowrap">
           {children.map((c) => (
             <NavItemDesktop key={c.id} item={c} />
           ))}
@@ -120,7 +121,7 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
       <div className=" mx-auto flex items-center justify-between p-4">
         {/* Desktop */}
         <div className="hidden md:flex items-center justify-between w-full">
-          <Image src="/logo/MIAM.svg" width={100} height={200}/>
+          <Image src="/logo/MIAM.svg" width={100} height={200} />
           <ul className="flex items-center gap-1">
             {nav.map((item) => (
               <NavItemDesktop key={item.id} item={item} />
@@ -134,8 +135,8 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
 
         {/* Mobile header: bouton burger + (optionnel) switcher si tu le veux ici */}
         <div className="flex bg-MIAMwhite/20 backdrop-blur-3xl md:hidden items-center justify-between w-full">
-<Image src="/logo/MIAM.svg" width={100} height={200}/>
-          
+          <Image src="/logo/MIAM.svg" width={100} height={200} />
+
           <button
             type="button"
             className="inline-flex items-center justify-center rounded p-2 hover:bg-black/5"
@@ -174,7 +175,7 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
                 onClick={closeMenu}
               >
                 {/* Icône close */}
-                <X size={24} strokeWidth={1.4}/>
+                <X size={24} strokeWidth={1.4} />
               </button>
             </div>
 

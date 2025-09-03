@@ -111,7 +111,7 @@ export default async function Page({ params: { locale } }) {
 
   return (
     <section className="pt-24">
-      <div className="grid grid-cols-4 px-4 gap-y-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-4 px-4">
         <h2 className="text-3xl">Archives</h2>
 
         <div className="col-span-3 space-y-10">

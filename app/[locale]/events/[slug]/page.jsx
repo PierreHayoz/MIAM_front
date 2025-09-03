@@ -9,8 +9,11 @@ import CategoryPills from "@/app/components/ui/CategoryPills";
 import GalleryMedia from "@/app/components/cms/GalleryMedia";
 import RichText from "@/app/components/ui/RichText";
 import Card from "@/app/components/cards/Card";
+import ShareButtons from "@/app/components/ui/ShareButton";
 
 export const revalidate = 0;
+
+
 
 function formatTimeRange(e) {
     const { startTime, endTime } = e || {};
@@ -26,6 +29,8 @@ export default async function EventPage({ params }) {
     const e = await getEventBySlug(slug, { locale });
     if (!e) return notFound();
 
+    const site = process.env.NEXT_PUBLIC_SITE_URL || "https://miam.tipper.watch";
+    const shareUrl = `${site}/${locale}/events/${e.slug}`;
     const timeRange = formatTimeRange(e);
 
     // ✨ SUGGESTIONS : 3 prochains
@@ -58,7 +63,14 @@ export default async function EventPage({ params }) {
                             ⚠️ Cet événement n’est pas recommandé pour les enfants.
                         </div>
                     )}
-
+                    
+{/* <ShareButtons
+  title={e.title}
+  description={e.description}
+  url={shareUrl}           // 👈 absolue
+  utm={{ source: "share", medium: "page" }}
+  className="mb-4"
+/> */}
                     {/* Description / contenu (rich text si dispo) */}
                     {Array.isArray(e.descriptionBlocks) && e.descriptionBlocks.length > 0 ? (
                         <div className="text-lg">
@@ -153,25 +165,37 @@ export default async function EventPage({ params }) {
     );
 }
 
-// --- SEO hreflang pour le switcher/SEO ---
 export async function generateMetadata({ params }) {
-    const { locale, slug } = await params;
-    const e = await getEventBySlug(slug, { locale });
-    if (!e) return {};
+  const { locale, slug } = await params;
+  const e = await getEventBySlug(slug, { locale });
+  if (!e) return {};
 
-    // alternates basés sur documentId pour trouver les slugs des autres langues
-    const languages = { [locale]: `/${locale}/events/${e.slug}` };
-    if (e.documentId) {
-        for (const l of ["fr", "en", "de"]) {
-            if (!languages[l]) {
-                const t = await getEventByDocument(e.documentId, { locale: l }).catch(() => null);
-                if (t?.slug) languages[l] = `/${l}/events/${t.slug}`;
-            }
-        }
-    }
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://miam.tipper.watch";
+  const url = `${site}/${locale}/events/${e.slug}`;
+  const shareUrl = `${site}/${locale}/events/${e.slug}`;
+  const title = e.title;
+  const description = e.description?.slice(0, 150) || "";
+  const image = e.thumbnail || `${site}/og-default.jpg`;
 
-    return {
-        title: e.title,
-        alternates: { languages },
-    };
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "MIAM",
+      locale,
+      type: "article",
+      images: [{ url: image, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
 }
+

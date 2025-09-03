@@ -399,3 +399,16 @@ export async function getNavigation({ tree = "navigation", locale = "fr", type =
 
   return raw.map(mapItem);
 }
+
+
+function mapPageNode(entry) {
+  if (!entry?.id) return null;
+  const a = entry.attributes || {};
+  return {
+    id: entry.id,
+    slug: a.slug,
+    pageTitle: a.pageTitle || a.title || a.name || a.slug,
+    // important pour la chaîne parents
+    parent: a.parent?.data ? mapPageNode(a.parent.data) : null,
+  };
+}
