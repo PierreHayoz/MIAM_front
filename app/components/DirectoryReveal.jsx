@@ -88,6 +88,7 @@ export default function DirectoryReveal({
                 revealSide="right"
                 revealPadding="p-4"
                 imageSize={imageWidth}
+                unoptimizedImages={true}
                 activateOnMobile={true}
                 inViewMargin="-35% 0px -35% 0px"
                 inViewAmount={0.3}

@@ -16,7 +16,6 @@ export default async function Page({ params, searchParams }) {
   return (
     <div className="px-4">
    <BreadcrumbsServer page={page} locale={locale} />
-
       <div className="grid grid-cols-4 gap-2">
         <h1 className="text-3xl md:col-span-1 col-span-4">{page.pageTitle}</h1>
         <div className="col-span-4 md:col-span-2">

@@ -68,7 +68,7 @@ export async function getHomepage({ locale = "fr", preview = false, next = { rev
 export async function getGlossaires({
   locale = "fr",
   pageSize = 200,
-  next = { revalidate: 60 },
+  next = { revalidate: 0 },
 } = {}) {
   const params = {
     ...(locale ? { locale } : {}),
@@ -82,7 +82,7 @@ export async function getGlossaires({
 export async function getMembres({
   locale = "fr",
   pageSize = 200,
-  next = { revalidate: 60 },
+  next = { revalidate: 0 },
 } = {}) {
   const params = {
     ...(locale ? { locale } : {}),

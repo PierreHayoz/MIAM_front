@@ -1,4 +1,3 @@
-// app/components/cms/RenderBlocks.jsx  (Server Component — pas de "use client")
 import Paragraphs from "../../components/paragraphs/Paragraphs";
 import MidParagraph from "../../components/paragraphs/MidParagraph";
 import CardsListServer from "../cards/CardsList";
@@ -6,7 +5,7 @@ import GalleryMedia from "./GalleryMedia";
 import BannerImage from "./BannerImage";
 import {
   getEvents, getGlossaires, getMembres
-} from "@/app/lib/strapi"; // 👈 manquait
+} from "@/app/lib/strapi";
 import RichTextServer from "../ui/RichText";
 import DirectoryReveal, { mapStrapi } from "../DirectoryReveal";
 import PartnersStrip from "../partners/Partners";
@@ -73,14 +72,14 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
         out.push(
           <section key={`partners-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 px-4 py-6">
             <div className="col-span-2 col-start-2">
-            {paragraphe ? (
-              <div className="mb-6 col-span-4">
-                <RichTextServer value={paragraphe} />
-              </div>
-            ) : null}
+              {paragraphe ? (
+                <div className="mb-6 col-span-4">
+                  <RichTextServer value={paragraphe} />
+                </div>
+              ) : null}
             </div>
             <div className="col-span-2 col-start-2">
-            <PartnersStrip items={items} />
+              <PartnersStrip items={items} />
             </div>
           </section>
         );
@@ -166,7 +165,6 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
       }
 
       case "blocks.paragraphes": {
-        // ici tu utilises ton nouveau composant
         out.push(
           <div key={`paragraphes-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 pb-8">
             <div className="md:col-start-2 md:col-span-2 col-span-4">
@@ -212,7 +210,5 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
         break;
     }
   }
-
-  // ✅ un seul return, aucune logique JSX hors composant
   return <>{out}</>;
 }
