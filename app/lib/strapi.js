@@ -442,7 +442,7 @@ export async function getEvents({
     "populate[cover]": "true",
     "populate[occurences]": "true",
 
-"populate[prices]": "true",
+"opulate[prices]": "true",
     "populate[event_categories]": "true",
     "populate[gallery][populate][image]": "true",
     // tri stable pour l’archives/liste
@@ -486,7 +486,7 @@ export async function getUpcomingEvents({
   excludeSlug,
   excludeDocumentId,
   categories = [],
-  next = { revalidate: 300 },
+  next = { revalidate: 0 },
 } = {}) {
   const today = new Date().toISOString().slice(0, 10);
 
