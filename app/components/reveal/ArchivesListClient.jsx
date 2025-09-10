@@ -1,33 +1,43 @@
-// app/components/archives/ArchivesListClient.jsx
 "use client";
 
+import { useRef } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import RevealRowClient from "@/app/components/reveal/RevealRowClient";
 
-// mêmes helpers/couleurs que RevealList
+// mêmes couleurs que ton RevealList
 const HOVER_BGS = ["bg-MIAMblack", "bg-MIAMviolet", "bg-MIAMtomato", "bg-MIAMlime"];
 const textOnBg = (bg) => (bg === "bg-MIAMlime" ? "text-MIAMblack" : "text-white");
 const borderOnBg = (bg) => (bg === "bg-MIAMlime" ? "border-black/30" : "border-white/30");
-const blendFor = (bg) => (bg === "bg-MIAMblack" ? "mix-blend-lighten invert" : "mix-blend-darken");
 
-function hashKey(key) { const s = String(key ?? ""); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h >>> 0; }
-function pickBg(key) { const i = hashKey(key) % HOVER_BGS.length; return HOVER_BGS[i]; }
+/** RNG: crypto si dispo, sinon Math.random */
+function randUint() {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const a = new Uint32Array(1);
+    crypto.getRandomValues(a);
+    return a[0] >>> 0;
+  }
+  return (Math.random() * 0xffffffff) >>> 0;
+}
+
+/** petit xorshift pour itérer le RNG de façon cheap */
+function xorshift32(s) {
+  let x = s | 0;
+  x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+  return x >>> 0;
+}
+const pickR = (arr, r) => arr[r % arr.length];
+
 function initials(name = "?") {
   return String(name).split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]?.toUpperCase()).join("");
 }
 
-/**
- * Props (toutes sérialisables):
- * groups: [{ year, items: [{ key, href, title, tags[], dateRange, thumbnail }] }]
- */
 export default function ArchivesListClient({
   groups = [],
-  // options pour obtenir le *même rendu* que RevealList
   containerClassName = "",
   rowClassName = "border-b border-MIAMgreytext py-2 group relative",
   titleClassName = "cursor-pointer group-hover:translate-x-8 duration-500",
-  revealSide = "right",                // "left" possible si tu veux
+  revealSide = "right",
   revealPadding = "p-8",
   arrow = true,
   imageSize = 300,
@@ -39,6 +49,32 @@ export default function ArchivesListClient({
 }) {
   const sideClasses = revealSide === "left" ? "left-0" : "right-0";
 
+  // 🔀 RNG par composant (ré-initialisé à chaque montage/navigation),
+  // + caches par item pour rester stable pendant la vie du composant.
+  const seedRef = useRef(randUint());
+  const bgCacheRef = useRef(new Map());         // key -> bg class
+  const blendCacheRef = useRef(new Map());      // key -> blend classes
+
+  // helper: tirer un bg "au hasard" (avec petit "reroll" anti-noir si tu veux)
+  const pickRandomBg = (key) => {
+    const cache = bgCacheRef.current;
+    if (cache.has(key)) return cache.get(key);
+
+    seedRef.current = xorshift32(seedRef.current);
+    let bg = pickR(HOVER_BGS, seedRef.current);
+
+    // option: si tu veux limiter la fréquence du noir, reroll 1x sur noir ~50% du temps
+    if (bg === "bg-MIAMblack" && (seedRef.current & 1)) {
+      seedRef.current = xorshift32(seedRef.current);
+      bg = pickR(HOVER_BGS, seedRef.current);
+    }
+
+    cache.set(key, bg);
+    return bg;
+  };
+
+  const blendFor = (bg) => (bg === "bg-MIAMblack" ? "mix-blend-lighten invert" : "mix-blend-darken");
+
   return (
     <div className={containerClassName}>
       {groups.map(({ year, items }) => (
@@ -47,12 +83,18 @@ export default function ArchivesListClient({
 
           {items.map((it, idx) => {
             const key = it.key ?? idx;
-            const bg = pickBg(key);
-            const blendClass = blendFor(bg);
+
+            // 🎲 vrai aléatoire par item (figé tant que le composant vit)
+            const bg = pickRandomBg(key);
+            const blendClass = blendCacheRef.current.get(key) || (() => {
+              const b = blendFor(bg);
+              blendCacheRef.current.set(key, b);
+              return b;
+            })();
+
             const fgClass = textOnBg(bg);
             const bdClass = borderOnBg(bg);
 
-            // Titre identique à ton getTitle existant (titre + tags + date à droite)
             const titleNode = (
               <div className="grid grid-cols-2 gap-2 items-start">
                 <div className="group-hover:translate-x-8 duration-500">
@@ -74,14 +116,13 @@ export default function ArchivesListClient({
               </div>
             );
 
-            // Contenu “révélé” (image ronde blend/invert, sinon fallback initiales)
             const revealNode = it.thumbnail ? (
               <Image
                 width={imageSize}
                 height={imageSize}
                 src={it.thumbnail}
                 alt={it.title ?? "image"}
-                className={clsx("", blendClass, imageClassName)}
+                className={clsx("rounded-full", blendClass, imageClassName)}
                 unoptimized={unoptimizedImages}
                 onError={() => {}}
               />
@@ -100,7 +141,7 @@ export default function ArchivesListClient({
 
             return (
               <RevealRowClient
-              type="archives"
+                type="archives"
                 key={key}
                 title={titleNode}
                 href={it.href}
