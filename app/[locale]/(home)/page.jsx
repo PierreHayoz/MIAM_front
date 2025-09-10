@@ -3,11 +3,10 @@ import EventsSuggestionsBlock from "@/app/components/cms/EventsSuggestionsBlock"
 import SectionCtaBlock from "@/app/components/cms/SectionCTABlock";
 import PartnersListBlock from "@/app/components/cms/PartnersListBlock";
 import MidParagraph from "@/app/components/paragraphs/MidParagraph";
-
 const typeOf = (b) => b?.__component || b?.component || b?.type || "";
 
-export default async function HomePage({ params }) {
-  const { locale = "fr" } = await params;
+export default async function HomePage({ params = {} }) {
+  const locale = params?.locale ?? "fr";
   const [homepage, global] = await Promise.all([getHomepage({ locale }), getGlobal({ locale })]);
   const homeBlocks = Array.isArray(homepage?.blocks) ? homepage.blocks : [];
   const globalBlocks = Array.isArray(global?.blocks) ? global.blocks : [];
@@ -32,7 +31,7 @@ export default async function HomePage({ params }) {
           case "blocks.partners-list":
             return <PartnersListBlock key={`partners-${b.id ?? i}`} block={b} />;
             case "blocks.mid-paragraph":
-            return (<div key={`mid-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4">
+            return (<div key={`mid-${b.id ?? `idx-${i}`}`} className="grid grid-cols-4">
             <div className="md:col-span-2 md:col-start-2 col-span-4">
               <MidParagraph text={b.text} />
             </div>

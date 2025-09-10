@@ -5,12 +5,10 @@ import Image from "next/image";
 import clsx from "clsx";
 import RevealRowClient from "@/app/components/reveal/RevealRowClient";
 
-// mêmes couleurs que ton RevealList
 const HOVER_BGS = ["bg-MIAMblack", "bg-MIAMviolet", "bg-MIAMtomato", "bg-MIAMlime"];
 const textOnBg = (bg) => (bg === "bg-MIAMlime" ? "text-MIAMblack" : "text-white");
 const borderOnBg = (bg) => (bg === "bg-MIAMlime" ? "border-black/30" : "border-white/30");
 
-/** RNG: crypto si dispo, sinon Math.random */
 function randUint() {
   if (typeof crypto !== "undefined" && crypto.getRandomValues) {
     const a = new Uint32Array(1);
@@ -20,7 +18,6 @@ function randUint() {
   return (Math.random() * 0xffffffff) >>> 0;
 }
 
-/** petit xorshift pour itérer le RNG de façon cheap */
 function xorshift32(s) {
   let x = s | 0;
   x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
@@ -150,7 +147,7 @@ export default function ArchivesListClient({
                 titleClassName={titleClassName}
                 revealPadding={revealPadding}
                 sideClasses={sideClasses}
-                bg={bg}
+                bg={bg}s
                 rowTextClassName="text-MIAMgreytext text-sm"
                 revealTextClassName={fgClass}
                 activateOnMobile={activateOnMobile}
