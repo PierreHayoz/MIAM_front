@@ -22,19 +22,11 @@ export default function DirectoryReveal({
     const getThumbnail = (e) => getters.getThumbnail?.(e) ?? undefined;
     const getHref = (e) => getters.getHref?.(e) ?? undefined;
 
-    // Ce que la liste affiche (ligne de base)
     const getTitle = (entry) => {
-        const name = getName(entry);
-        const inline = getInline(entry);
-        return (
-            inline ? <div className="grid-cols-2 grid w-full  justify-between">
-                <div className="">{name}</div>
-                <div className="">{inline}</div>
-            </div> : <div className="">{name}</div>
-        )  // 👉 “Nom — Position” pour membres
+       const name = getName(entry);
+        return name
     };
-
-    // Popover (image + texte riche)
+    
     const renderReveal = (entry) => {
         const name = getName(entry);
         const inline = getInline(entry);
@@ -97,8 +89,7 @@ export default function DirectoryReveal({
     );
 }
 
-// Helpers réutilisables côté appelants
-// app/components/directory/DirectoryReveal.jsx
+
 export const mapStrapi = {
     getAttrs: (entry) => entry?.attributes ?? entry,
     getMediaUrl: (m) => {
