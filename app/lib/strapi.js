@@ -25,7 +25,73 @@ function normalizeEntry(entry) {
   if (!entry) return null;
   return entry.attributes ? { id: entry.id, ...entry.attributes } : entry;
 }
+// app/lib/strapi.js
+// ...
+export async function getPartners({
+  locale = "fr",
+  pageSize = 100,
+  next = { revalidate: 300 },
+} = {}) {
+  const params = {
+    ...(locale ? { locale } : {}),
+    "pagination[pageSize]": String(pageSize),
+    "populate[logo]": "true",
+  };
+  const data = await doFetch(`/api/partners`, { params, next });
+  return (data?.data ?? []).map(normalizeEntry);
+}
 
+// app/lib/strapi.js
+export async function getHomepage({ locale = "fr", preview = false, next = { revalidate: 0 } } = {}) {
+  const params = {
+    ...(preview ? { publicationState: "preview" } : {}),
+    ...(locale ? { locale } : {}),
+    "populate[blocks][on][shared.section-cta][populate][image]": "true",
+    "populate[blocks][on][shared.section-cta][populate][button]": "true",
+    "populate[blocks][on][shared.section-cta][populate][button][fields][0]": "label",
+    "populate[blocks][on][shared.section-cta][populate][button][populate][page]": "true",
+
+    "populate[blocks][on][blocks.mid-paragraph][populate]": "*",
+    "populate[blocks][on][blocks.partners-list][populate][partners][populate][logo]": "true",
+    "populate[blocks][on][shared.events-suggestions][populate]": "true",
+
+
+  };
+
+  const data = await doFetch(`/api/homepage`, { params, next });
+  console.log(data)
+  return data?.data?.attributes ? { id: data.data.id, ...data.data.attributes } : data?.data;
+}
+
+
+// app/lib/strapi.js
+export async function getGlossaires({
+  locale = "fr",
+  pageSize = 200,
+  next = { revalidate: 60 },
+} = {}) {
+  const params = {
+    ...(locale ? { locale } : {}),
+    "pagination[pageSize]": String(pageSize),
+    "populate[image]": "true",
+  };
+  const data = await doFetch(`/api/glossaires`, { params, next });
+  return (data?.data ?? []).map(normalizeEntry);
+}
+
+export async function getMembres({
+  locale = "fr",
+  pageSize = 200,
+  next = { revalidate: 60 },
+} = {}) {
+  const params = {
+    ...(locale ? { locale } : {}),
+    "pagination[pageSize]": String(pageSize),
+    "populate[photo]": "true",
+  };
+  const data = await doFetch(`/api/membres`, { params, next });
+  return (data?.data ?? []).map(normalizeEntry);
+}
 
 // app/lib/strapi.js
 export async function getPageBySlug(slug, { locale = "fr", preview = false } = {}) {
@@ -34,36 +100,49 @@ export async function getPageBySlug(slug, { locale = "fr", preview = false } = {
     "filters[slug][$eq]": slug,
     "locale": locale,
     "pagination[pageSize]": 1,
+    "populate": "*",
+    "populate[blocks][populate]": "*",
     "populate[blocks][on][blocks.events-list][populate]": "true",
     "populate[blocks][on][blocks.paragraphes][populate]": "*",
+    "populate[blocks][on][blocks.membres][populate]": "*",
+    "populate[blocks][on][blocks.glossaires][populate]": "true",
     "populate[blocks][on][blocks.banner][populate]": "*",
-    "populate[blocks][on][blocks.paragraph][populate]": "*",
     "populate[blocks][on][blocks.paragraphes][populate]": "*",
     "populate[blocks][on][blocks.mid-paragraph][populate]": "*",
     "populate[blocks][on][blocks.gallery-media][populate][gallery][populate]": "*",
     "populate[blocks][on][blocks.paragraphes][populate]": "*",
-    "populate[blocks][populate][pageIntro]" : "*",
+    "populate[blocks][on][blocks.partners-list][populate][partners][populate][logo]": "true",
+
+    "populate[blocks][populate][pageIntro]": "*",
+
+
   };
 
   const data = await doFetch(`/api/pages`, { params, next: { revalidate: 0 } });
-  console.log(data)
   return normalizeEntry(data?.data?.[0]);
+
 }
 export async function getGlobal({
   locale = "fr",
   preview = false,
-  next = { revalidate: 600 }, // ajuste le cache si besoin
+  next = { revalidate: 600 },
 } = {}) {
   const params = {
     ...(preview ? { publicationState: "preview" } : {}),
     ...(locale ? { locale } : {}),
-    "populate":"*"// nécessite que tu aies bien ajouté socialLinks sur Global
+
+    // Peuple la DZ + cible le bloc events-suggestions et ses champs
+    "populate[blocks][populate]": "true",
+    "populate[blocks][on][shared.events-suggestions][fields][0]": "title",
+    "populate[blocks][on][shared.events-suggestions][fields][1]": "limit",
+    "populate[blocks][on][shared.events-suggestions][fields][2]": "excludeCurrent",
   };
 
   const data = await doFetch(`/api/global`, { params, next });
   return normalizeEntry(data?.data);
 }
-// 👉 nouveau : récupérer une traduction via l’ID de l’entrée
+
+
 export async function getPageById(id, { locale = "fr", preview = false } = {}) {
   const params = {
     ...(preview ? { publicationState: "preview" } : {}),
@@ -118,55 +197,158 @@ export function mediaURL(input) {
   return raw ? (raw.startsWith('http') ? raw : `${STRAPI_URL}${raw}`) : null;
 }
 
+
+function toISODate(d) {
+  if (!d) return null;
+  const s = String(d);
+  return s.length >= 10 ? s.slice(0, 10) : null; // "YYYY-MM-DD"
+}
+const trimTime = (t) => (t ? String(t).slice(0, 5) : null);
+
 function mapEvent(entry) {
+  // entrée Strapi v4/v5
   const e = entry?.attributes ? { id: entry.id, ...entry.attributes } : (entry || {});
-  const coverUrl = e.cover?.data?.attributes?.url ?? e.cover?.url ?? null;
+  const coverUrl =
+    e.cover?.data?.attributes?.url ??
+    e.cover?.url ??
+    null;
 
+  // blocs -> tableau + version texte
   const descriptionBlocks = Array.isArray(e.description) ? e.description : [];
-  const contentBlocks = Array.isArray(e.content) ? e.content : [];
 
-  const gallery = (Array.isArray(e.gallery) ? e.gallery : []).map(g => {
+  // helpers locaux
+  const trimTime = (t) => (t ? String(t).slice(0, 5) : null);
+
+  // ---------- OCCURRENCES (shared.date-occurence) ----------
+  // NB: ton schéma = "occurences" (orthographe)
+  const occRaw = Array.isArray(e.occurences) ? e.occurences : [];
+  const occs = [];
+
+  // 1) toutes les occurences saisies dans le champ repeatable
+  for (const o of occRaw) {
+    const date = toISODate(o?.date ?? o);
+    if (!date) continue;
+    occs.push({
+      date,
+      startTime: trimTime(o?.startTime ?? e.startTime),
+      endTime:   trimTime(o?.endTime   ?? e.endTime),
+    });
+  }
+
+  // 2) toujours ajouter la date “de base” si présente (startDate/startTime)
+  if (e.startDate) {
+    const baseDate = toISODate(e.startDate);
+    if (baseDate) {
+      occs.push({
+        date: baseDate,
+        startTime: trimTime(e.startTime),
+        endTime:   trimTime(e.endTime),
+      });
+    }
+  }
+
+  // 3) nettoyer (drop sans date) + dédupe + tri
+  const seen = new Set();
+  const occurrences = [];
+  for (const o of occs) {
+    if (!o.date) continue;
+    const k = `${o.date}|${o.startTime || ""}|${o.endTime || ""}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    occurrences.push(o);
+  }
+  occurrences.sort(
+    (a, b) =>
+      a.date.localeCompare(b.date) ||
+      String(a.startTime || "").localeCompare(String(b.startTime || ""))
+  );
+
+  // bornes & prochaine occurrence
+  const first = occurrences[0] || null;
+  const last  = occurrences[occurrences.length - 1] || first || null;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const nextOccurrence = occurrences.find((o) => o.date >= today) || null;
+
+  // ---------- PRIX ----------
+  // supporte une éventuelle liste `prices` (si elle existe),
+  // sinon on retombe sur `price` (string) ou `isFree`.
+  let prices = Array.isArray(e.prices)
+    ? e.prices.map((p) => ({
+        label: p.label || "",
+        amount: p.amount ?? null,
+        currency: p.currency || "CHF",
+        note: p.note || "",
+      }))
+    : [];
+
+  if (!prices.length && (e.price || e.isFree)) {
+    prices = [
+      {
+        label: e.isFree ? "Gratuit" : (e.price || ""),
+        amount: null,
+        currency: "CHF",
+        note: "",
+      },
+    ];
+  }
+
+  const minPrice =
+    prices
+      .map((p) => (typeof p.amount === "number" ? p.amount : null))
+      .filter((v) => v != null)
+      .sort((a, b) => a - b)[0] ?? null;
+
+  // ---------- GALERIE ----------
+  const gallery = (Array.isArray(e.gallery) ? e.gallery : []).map((g) => {
     const imgAttr =
       g?.image?.data?.attributes ||
       g?.image?.attributes ||
-      g?.image || null;
-
+      g?.image ||
+      null;
     const rawUrl = imgAttr?.url || g?.src || null;
     const url = mediaURL(rawUrl);
-
     return {
-      type: g?.type || 'image',
-      image: imgAttr ? {
-        url,
-        mime: imgAttr?.mime,
-        alternativeText: imgAttr?.alternativeText || g?.alt || ''
-      } : null,
+      type: g?.type || "image",
+      image: imgAttr
+        ? {
+            url,
+            mime: imgAttr?.mime,
+            alternativeText: imgAttr?.alternativeText || g?.alt || "",
+          }
+        : null,
       src: url,
-      alt: g?.alt || imgAttr?.alternativeText || '',
-      caption: g?.caption || '',
+      alt: g?.alt || imgAttr?.alternativeText || "",
+      caption: g?.caption || "",
     };
   });
 
-  const trim = (t) => (t ? String(t).slice(0, 5) : null);
-
+  // ---------- SORTIE NORMALISÉE ----------
   return {
     id: e.id,
     slug: e.slug,
     title: e.title,
-
+    documentId: e.documentId || e.document_id || null,
     descriptionBlocks,
-    contentBlocks,
-
     description: blocksToText(descriptionBlocks),
-    content: blocksToText(contentBlocks),
+    content: e.content,
 
-    startDate: e.startDate || null,
-    endDate: e.endDate || e.startDate || null,
-    startTime: trim(e.startTime),
-    endTime: trim(e.endTime),
+    // ✅ occurrences normalisées
+    occurrences,        // [{ date:'YYYY-MM-DD', startTime:'HH:MM'|null, endTime:'HH:MM'|null }]
+    nextOccurrence,     // { ... } | null
 
+    // dates/horaires “agrégées” (compat avec tes composants existants)
+    startDate: e.startDate || first?.date || null,
+    endDate:   e.endDate   || last?.date  || (e.startDate || null),
+    startTime: trimTime(e.startTime ?? first?.startTime),
+    endTime:   trimTime(e.endTime   ?? first?.endTime),
+
+    // prix
     isFree: e.isFree === true,
-    price: e.price || null,
+    price: e.price || null,  // string d’appoint
+    prices,                  // liste enrichie (si configurée)
+    minPrice,
+
     isKidsFriendly: e.isKidsFriendly === true,
     ticketUrl: e.ticket_url || null,
 
@@ -175,11 +357,13 @@ function mapEvent(entry) {
 
     categories: pickCategories(e),
 
-    // 👇 utiles pour comprendre pourquoi “ça n’apparait pas”
     locale: e.locale ?? null,
     publishedAt: e.publishedAt ?? null,
   };
 }
+
+
+
 
 
 export async function getEventBySlug(slug, {
@@ -192,9 +376,14 @@ export async function getEventBySlug(slug, {
     ...(locale ? { locale } : {}),
     "filters[slug][$eq]": slug,
     "pagination[pageSize]": 1,
+    // les champs "classiques" que tu avais déjà
+"populate[prices]": "true",
+    // les champs "classiques" que tu avais déjà
     "populate[cover]": "true",
     "populate[event_categories]": "true",
     "populate[gallery][populate][image]": "true",
+    // localizations si tu veux
+    "populate[occurences]": "true",
 
     "populate[localizations]": "true",
     "populate[localizations][fields][0]": "slug",
@@ -203,8 +392,19 @@ export async function getEventBySlug(slug, {
 
   const data = await doFetch(`/api/events`, { params, next });
   const entry = data?.data?.[0];
-  return entry ? mapEvent(entry) : null;
+
+  if (!entry) return null;
+
+  // tu avais déjà mapEvent → on garde la même donnée enrichie
+  const mapped = mapEvent(entry);
+
+  // 🔥 on greffe les blocs “tels quels” (v4/v5 compatible)
+  mapped.blocks = entry.attributes?.blocks ?? entry.blocks ?? [];
+
+  return mapped;
 }
+
+
 export async function getEventByDocument(documentId, {
   locale,
   preview = false,
@@ -215,6 +415,8 @@ export async function getEventByDocument(documentId, {
     ...(locale ? { locale } : {}),
     "filters[documentId][$eq]": documentId,
     "pagination[pageSize]": 1,
+    "populate[occurences]": "true",
+"populate[prices]": "true",
 
     "fields[0]": "slug",
     "fields[1]": "locale",
@@ -238,9 +440,13 @@ export async function getEvents({
     publicationState: preview ? "preview" : "live",
     ...(locale ? { locale } : {}),
     "populate[cover]": "true",
+    "populate[occurences]": "true",
+
+"populate[prices]": "true",
     "populate[event_categories]": "true",
     "populate[gallery][populate][image]": "true",
     // tri stable pour l’archives/liste
+
     "sort[0]": "startDate:desc",
     "sort[1]": "endDate:desc",
     ...params,
@@ -270,67 +476,81 @@ export async function getEvents({
 }
 
 // --- en bas de app/lib/strapi.js (et exporte) ---
+// app/lib/strapi.js
+// app/lib/strapi.js
 export async function getUpcomingEvents({
   locale = "fr",
   limit = 3,
   preview = false,
-  excludeDocumentId,
+  excludeId,
   excludeSlug,
-  categories = [], // tableau de noms (ta mapEvent renvoie des noms)
+  excludeDocumentId,
+  categories = [],
   next = { revalidate: 300 },
 } = {}) {
   const today = new Date().toISOString().slice(0, 10);
 
-  // Base: événements à venir (startDate >= today OU endDate >= today)
+  // on construit des exclusions robustes
+  const exIds = [].concat(excludeId || []).filter(Boolean);
+  const exSlugs = [].concat(excludeSlug || []).filter(Boolean);
+  const exDocs = [].concat(excludeDocumentId || []).filter(Boolean);
+
   const base = {
     ...(preview ? { publicationState: "preview" } : {}),
     ...(locale ? { locale } : {}),
+    // futur
     "filters[$or][0][startDate][$gte]": today,
     "filters[$or][1][endDate][$gte]": today,
-    ...(excludeDocumentId ? { "filters[documentId][$ne]": excludeDocumentId } : {}),
-    ...(excludeSlug ? { "filters[slug][$ne]": excludeSlug } : {}),
+
+    // exclusions serveur (arrays)
+    ...(exIds.length ? Object.fromEntries(exIds.map((v, i) => [`filters[id][$notIn][${i}]`, String(v)])) : {}),
+    ...(exSlugs.length ? Object.fromEntries(exSlugs.map((v, i) => [`filters[slug][$notIn][${i}]`, v])) : {}),
+    ...(exDocs.length ? Object.fromEntries(exDocs.map((v, i) => [`filters[documentId][$notIn][${i}]`, v])) : {}),
+
     "sort[0]": "startDate:asc",
-    "pagination[pageSize]": String(limit),
+    "pagination[pageSize]": String(Math.max(limit, 1) * 4), // on sur-fait
     "populate[cover]": "true",
     "populate[event_categories]": "true",
     "populate[gallery][populate][image]": "true",
   };
 
-  // 1) Essai avec filtre de catégories (si fourni)
-  let primary = [];
+  const fetchOnce = async (params) => (await doFetch(`/api/events`, { params, next }).catch(() => null))?.data ?? [];
+
+  let raw = [];
   if (categories?.length) {
     const byCats = { ...base };
     categories.forEach((name, i) => {
       byCats[`filters[event_categories][name][$in][${i}]`] = String(name);
     });
-    const data = await doFetch(`/api/events`, { params: byCats, next }).catch(() => null);
-    primary = data?.data ?? [];
+    raw = await fetchOnce(byCats);
+  }
+  if (raw.length < limit) {
+    const extra = await fetchOnce(base);
+    raw = [...raw, ...extra];
   }
 
-  // 2) Compléter sans filtre si on n'en a pas assez
-  let results = [...primary];
-  if (results.length < limit) {
-    const all = await doFetch(`/api/events`, {
-      params: { ...base, "pagination[pageSize]": String(limit * 2) },
-      next,
-    }).catch(() => null);
-    const extra = all?.data ?? [];
+  // Filtre & dédup côté client (ceinture+bretelles)
+  const notSelf = (x) => !(
+    (excludeId && x?.id === Number(excludeId)) ||
+    (excludeSlug && x?.attributes?.slug === excludeSlug) ||
+    (excludeDocumentId && x?.attributes?.documentId === excludeDocumentId)
+  );
+  const key = (r) => `${r.id}|${r.attributes?.documentId || ""}|${r.attributes?.slug || ""}`;
 
-    const seen = new Set(results.map(r => r.documentId || r.id));
-    for (const r of extra) {
-      const key = r.documentId || r.id;
-      if (!seen.has(key)) {
-        results.push(r);
-        seen.add(key);
-      }
-      if (results.length >= limit) break;
+  const seen = new Set();
+  const cleaned = [];
+  for (const r of raw) {
+    if (!notSelf(r)) continue;
+    const k = key(r);
+    if (!seen.has(k)) {
+      seen.add(k);
+      cleaned.push(r);
     }
+    if (cleaned.length >= limit * 2) break;
   }
 
-  return results.slice(0, limit).map(mapEvent);
+  return cleaned.slice(0, limit + 5).map(mapEvent);
 }
-
-
 
 // --- NAVIGATION (strapi-plugin-navigation) ---
 /**

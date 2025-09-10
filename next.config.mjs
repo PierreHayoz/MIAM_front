@@ -17,6 +17,13 @@ const nextConfig = {
         port: '',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '1337',
+        pathname: '/uploads/**',
+      },
+      
       // (optionnel) ajoute ici d’autres CDN (Cloudinary/S3...) si tu en utilises
       // { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/**' },
     ],

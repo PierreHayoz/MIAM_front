@@ -1,5 +1,4 @@
 // app/components/ui/ShareButtons.jsx
-"use client";
 import { useCallback, useMemo, useState } from "react";
 import { Share2, Link as LinkIcon, Check } from "lucide-react";
 

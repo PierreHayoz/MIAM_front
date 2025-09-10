@@ -9,13 +9,16 @@ export default function BannerImage({ media, alt = "" }) {
     mediaURL(media?.media) ||
     (typeof media === "string" ? media : null);
   return (
+    <>
       <Image
         src={url}
-        alt={alt || "banner"}
+        alt={media.caption}
         width={1920}
         height={1080}
         priority
         className="mix-blend-darken w-full"
       />
+<div className="text-xs w-full text-center">{media.caption}</div>
+      </>
   );
 }

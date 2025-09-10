@@ -1,49 +1,61 @@
 // app/components/ui/BreadcrumbsServer.jsx
+import React from "react";
 import Link from "next/link";
+import { buildPageBreadcrumbs, buildEventBreadcrumbs } from "@/app/lib/breadcrumbs";
 
-function buildAncestors(page) {
-  const chain = [];
-  let node = page?.parent || null;
-  while (node) {
-    chain.unshift(node); // du plus haut vers le plus proche parent
-    node = node.parent || null;
+// Composant serveur
+export default async function BreadcrumbsServer({ locale, page = null, event = null, items = null }) {
+  let crumbs = items;
+
+  if (!crumbs) {
+    if (page) {
+      crumbs = await buildPageBreadcrumbs({ page, locale });
+    } else if (event) {
+      crumbs = await buildEventBreadcrumbs({ event, locale });
+    } else {
+      crumbs = [{ href: `/${locale}`, label: "Accueil" }];
+    }
   }
-  return chain;
-}
 
-export default function BreadcrumbsServer({ page, locale }) {
-  const ancestors = buildAncestors(page);
-  const items = [...ancestors, page];
+  // JSON-LD (SEO BreadcrumbList)
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.label,
+      ...(c.href ? { item: c.href } : {}),
+    })),
+  };
 
   return (
-    <nav aria-label="Breadcrumb" className="mb-4 text-sm text-gray-600">
-      <ol className="flex flex-wrap items-center gap-1">
-        <li>
-          <Link href={`/${locale}`} className="hover:underline">
-            Accueil
-          </Link>
-          {items.length > 0 && <span className="mx-1">/</span>}
-        </li>
+    <>
+      <nav aria-label="Fil d’Ariane" className="mb-4 text-sm text-MIAMgreytext">
+        <ol className="flex flex-wrap items-center gap-1">
+          {crumbs.map((c, i) => {
+            const isLast = i === crumbs.length - 1;
+            return (
+              <li key={`${c.label}-${i}`} className="flex items-center gap-1">
+                {c.href && !isLast ? (
+                  <Link href={c.href} className="hover:underline">{c.label}</Link>
+                ) : (
+                  <span aria-current={isLast ? "page" : undefined} className={isLast ? "font-medium text-MIAMblack" : ""}>
+                    {c.label}
+                  </span>
+                )}
+                {!isLast && <span className="px-1">/</span>}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
 
-        {items.map((item, idx) => {
-          const isLast = idx === items.length - 1;
-          const href = `/${locale}/${item.slug}`;
-          return (
-            <li key={item.id} className="flex items-center">
-              {isLast ? (
-                <span className="font-medium text-gray-900">{item.pageTitle || item.slug}</span>
-              ) : (
-                <>
-                  <Link href={href} className="hover:underline">
-                    {item.pageTitle || item.slug}
-                  </Link>
-                  <span className="mx-1">/</span>
-                </>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+    </>
   );
 }

@@ -14,10 +14,9 @@ export default async function Nav() {
 
     return (
         <div
-            className="w-full fixed top-0 left-0 flex justify-between items-center py-4 z-[100] border-b-1 bg-MIAMwhite px-4"
+            className="w-full fixed top-0 left-0 flex h-full justify-between items-center py-4 z-[100] border-b-1 px-4"
         >
-            <Image src="/logo/MIAM.svg" width={300} height={300}className="w-32"/>
-
+            <Image src="/logo/MIAM.svg" width={80} height={80}className="w-32"/>
                 <ul
                     className=" backdrop-blur-xl flex gap-1 p-1 rounded-full"
                 >

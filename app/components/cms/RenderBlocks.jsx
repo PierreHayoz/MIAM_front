@@ -4,8 +4,12 @@ import MidParagraph from "../../components/paragraphs/MidParagraph";
 import CardsListServer from "../cards/CardsList";
 import GalleryMedia from "./GalleryMedia";
 import BannerImage from "./BannerImage";
-import { getEvents } from "@/app/lib/strapi"; // 👈 manquait
+import {
+  getEvents, getGlossaires, getMembres
+} from "@/app/lib/strapi"; // 👈 manquait
 import RichTextServer from "../ui/RichText";
+import DirectoryReveal, { mapStrapi } from "../DirectoryReveal";
+import PartnersStrip from "../partners/Partners";
 
 // utils
 const todayISO = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -13,13 +17,75 @@ const sortParam = (s) => (s === "date_desc" ? "startDate:desc" : "startDate:asc"
 
 export default async function RenderBlocks({ blocks = [], locale, searchParams }) {
   if (!Array.isArray(blocks) || blocks.length === 0) return null;
+  const glossaireGetters = {
+    getKey: (e) => e?.id ?? e?.documentId,
+    getName: (e) => {
+      const a = mapStrapi.getAttrs(e);
+      return a?.nom ?? a?.name ?? a?.title ?? "—";
+    },
+    getInline: () => "",
+    getDescription: (e) => {
+      const a = mapStrapi.getAttrs(e);
+      return a?.definition ?? a?.description ?? "";
+    },
+    getThumbnail: (e) => {
+      const a = mapStrapi.getAttrs(e);
+      return mapStrapi.getMediaUrl(
+        a?.image ?? a?.photo ?? a?.media ?? a?.illustration ?? a?.cover
+      );
+    },
+  };
 
+  const membresGetters = {
+    getKey: (e) => e?.id ?? e?.documentId,
+    getName: (e) => {
+      const a = mapStrapi.getAttrs(e);
+      return a?.nom ?? a?.name ?? "—";
+    },
+    getInline: (e) => {
+      const a = mapStrapi.getAttrs(e);
+      return a?.position ?? a?.role ?? a?.fonction ?? "";
+    },
+    getDescription: (e) => {
+      const a = mapStrapi.getAttrs(e);
+      return a?.presentation ?? a?.description ?? "";
+    },
+    getThumbnail: (e) => {
+      const a = mapStrapi.getAttrs(e);
+      return mapStrapi.getMediaUrl(a?.photo ?? a?.image);
+    },
+  };
   const out = [];
 
   for (let idx = 0; idx < blocks.length; idx++) {
     const b = blocks[idx];
     const type = b?.__component;
     switch (type) {
+      case "blocks.partners-list": {
+        const bAttrs = b?.attributes ?? b; // v4/v5 compatible
+        const paragraphe = bAttrs.paragraphe;
+
+        const items =
+          (Array.isArray(bAttrs?.partners?.data) && bAttrs.partners.data) ||
+          (Array.isArray(bAttrs?.partners) && bAttrs.partners) ||
+          [];
+
+        out.push(
+          <section key={`partners-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 px-4 py-6">
+            <div className="col-span-2 col-start-2">
+            {paragraphe ? (
+              <div className="mb-6 col-span-4">
+                <RichTextServer value={paragraphe} />
+              </div>
+            ) : null}
+            </div>
+            <div className="col-span-2 col-start-2">
+            <PartnersStrip items={items} />
+            </div>
+          </section>
+        );
+        break;
+      }
       case "blocks.events-list": {
         // config bloc
         const cfg = {
@@ -49,7 +115,6 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
         // fetch events (⚠️ locale)
         const events = await getEvents({ locale, params, next: { revalidate: 60 } });
 
-        // range par défaut du bloc, sauf si l’utilisateur a déjà choisi via ?t=
         const tEff =
           searchParams?.t ??
           (["week", "month", "year"].includes(cfg.defaultRange) ? cfg.defaultRange : undefined);
@@ -77,52 +142,40 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
         );
         break;
       }
+      case "blocks.glossaires": {
+        const items = await getGlossaires({ locale });
+        out.push(
+          <div className="md:grid md:grid-cols-4">
+            <div className="col-start-2 col-span-2">
+              <DirectoryReveal items={items} heading={b.title} getters={glossaireGetters} />
+            </div>
+          </div>);;
+        break;
+      }
 
-case "blocks.paragraph": {
-  const isList = b.type === "list";
-  const variant =
-    b.variant || (isList ? (b.items?.[0]?.photo ? "avatar" : "text") : "text");
+      case "blocks.membres": {
+        const items = await getMembres({ locale });
+        const heading = b?.title
+        out.push(
+          <div className="md:grid md:grid-cols-4">
+            <div className="col-start-2 col-span-2">
+              <DirectoryReveal items={items} heading={heading} getters={membresGetters} />
+            </div>
+          </div>);
+        break;
+      }
 
-  const isRich = (v) =>
-    Array.isArray(v) || (v && typeof v === "object" && (v.type || v.children));
-
-  const title = b.title;
-  const subtitle = isRich(b.subtitle) ? undefined : b.subtitle;
-  const subtitleRichText = isRich(b.subtitle) ? b.subtitle : undefined;
-  const text = isRich(b.text) ? undefined : b.text;
-  const richText = isRich(b.text) ? b.text : undefined;
-
-  out.push(
-    <div key={`paragraph-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4">
-      <div className="md:col-start-2 md:col-span-2 col-span-4">
-        <Paragraphs
-          title={title}
-          subtitle={subtitle}
-          subtitleRichText={subtitleRichText}   // 👈
-          text={text}
-          richText={richText}                   // 👈
-          type={isList ? "list" : undefined}
-          items={isList ? (b.items || []) : []}
-          variant={variant}
-          revealProps={{ revealSide: "right", arrow: true }}
-        />
-      </div>
-    </div>
-  );
-  break;
-}
-case "blocks.paragraphes": {
-  // ici tu utilises ton nouveau composant
-  console.log()
-  out.push(
-    <div key={`paragraphes-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 pb-8">
-      <div className="md:col-start-2 md:col-span-2 col-span-4">
-        <RichTextServer value={b.paragraphe} />
-      </div>
-    </div>
-  );
-  break;
-}
+      case "blocks.paragraphes": {
+        // ici tu utilises ton nouveau composant
+        out.push(
+          <div key={`paragraphes-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 pb-8">
+            <div className="md:col-start-2 md:col-span-2 col-span-4">
+              <RichTextServer value={b.paragraphe} />
+            </div>
+          </div>
+        );
+        break;
+      }
 
       case "blocks.banner": {
         const media = b.image ?? b.media ?? b.photo ?? b.file ?? b.url;

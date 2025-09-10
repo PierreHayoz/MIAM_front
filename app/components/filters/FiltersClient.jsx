@@ -121,7 +121,7 @@ export default function FiltersClient({ allCats = [] }) {
       </div>
 
       {/* Quoi ? */}
-      <div className=' sticky top-4'>
+      <div className=''>
         <h2 className="text-xl">Quoi ?</h2>
         <ul className="flex flex-wrap gap-2 pt-2">
           {allCats.map((cat) => {

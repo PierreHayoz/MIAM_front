@@ -1,14 +1,15 @@
 "use client";
+import { useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo } from "react";
 import CategoryPills from "../ui/CategoryPills";
 import RichTextServer from "../ui/RichText";
 
+/** Desktop hover classes (cohérentes ≥ md) */
 const HOVER_BG_CLASSES = [
   "md:hover:bg-MIAMblack",
   "md:hover:bg-MIAMviolet",
-  "hover:bg-MIAMtomato",
+  "md:hover:bg-MIAMtomato",
   "md:hover:bg-MIAMlime",
 ];
 
@@ -19,21 +20,35 @@ const MOBILE_BG_CLASSES = [
   "bg-MIAMlime",
 ];
 
+/** RNG: crypto si dispo, sinon Math.random */
+function randUint() {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const a = new Uint32Array(1);
+    crypto.getRandomValues(a);
+    return a[0] >>> 0;
+  }
+  // fallback
+  return (Math.random() * 0xffffffff) >>> 0;
+}
+const pickR = (arr, r) => arr[r % arr.length];
+
 const Card = ({
-  index,                // <-- passe l'index depuis le .map()
+  index,
+  id,
   locale,
   slug,
   title,
   thumbnail,
   startDate,
-  contentBlocks= null,
   endDate,
   startTime,
   endTime,
   description,
   descriptionBlocks,
+  contentBlocks = null,
   categories = [],
 }) => {
+  /** ====== Formatages ====== */
   const formatDateRange = (s, e) => {
     if (!s) return null;
     const fmt = new Intl.DateTimeFormat("fr-CH", {
@@ -56,41 +71,43 @@ const Card = ({
   const dateLabel = formatDateRange(startDate, endDate);
   const timeLabel = formatTimeRange(startTime, endTime);
 
-  // Hover desktop aléatoire (inchangé)
-  const hoverBgClass = useMemo(
-    () => HOVER_BG_CLASSES[Math.floor(Math.random() * HOVER_BG_CLASSES.length)],
-    []
-  );
+  /** ====== Tirages aléatoires (stables par carte via useRef) ====== */
+  // Hover desktop : tirage + “reroll” si noir pour varier
+  const hoverIdxRef = useRef(null);
+  if (hoverIdxRef.current === null) {
+    let r = randUint();
+    let idx = r % HOVER_BG_CLASSES.length;
+    if (HOVER_BG_CLASSES[idx] === "md:hover:bg-MIAMblack") {
+      r = randUint(); // reroll 1x si noir
+      idx = r % HOVER_BG_CLASSES.length;
+    }
+    hoverIdxRef.current = idx;
+  }
+  const hoverBgClass = HOVER_BG_CLASSES[hoverIdxRef.current];
 
-  // MOBILE: 1 carte sur 2 transparente (ici: index impair => transparent)
-  const mobileBgClass = useMemo(() => {
-    if (typeof index === "number" && index % 2 === 1) return "bg-transparent";
-    return MOBILE_BG_CLASSES[Math.floor(Math.random() * MOBILE_BG_CLASSES.length)];
-  }, [index]);
+  // Mobile background : conserver 1/2 transparent (index impair), sinon couleur aléatoire
+  const mobileIdxRef = useRef(null);
+  if (mobileIdxRef.current === null) {
+    mobileIdxRef.current = randUint() % MOBILE_BG_CLASSES.length;
+  }
+  const mobileBgClass =
+    typeof index === "number" && index % 2 === 1
+      ? "bg-transparent"
+      : MOBILE_BG_CLASSES[mobileIdxRef.current];
 
-  // -------- Nouveautés demandées --------
-  const isMobileBlack  = mobileBgClass === "bg-MIAMblack";
-  const isMobileViolet = mobileBgClass === "bg-MIAMviolet";
-  const isMobileTomato = mobileBgClass === "bg-MIAMtomato";
+  // Dérivés
+  const isMobileDark = ["bg-MIAMblack", "bg-MIAMviolet", "bg-MIAMtomato"].includes(mobileBgClass);
+  const baseTextClass = isMobileDark ? "text-MIAMwhite md:text-MIAMblack" : "text-MIAMblack";
+  const basePillClass = isMobileDark
+    ? "border-MIAMwhite text-MIAMwhite md:border-MIAMblack md:text-MIAMblack"
+    : "border-MIAMblack text-MIAMblack";
 
-  // Texte/pills en blanc si fond rouge/violet/noir (mobile), et retour à normal en md+
-  const baseTextClass =
-    isMobileBlack || isMobileViolet || isMobileTomato
-      ? "text-MIAMwhite md:text-inherit"
-      : "";
+  // Mobile: si fond noir -> lighten, sinon darken
+  const imageBaseMobileClass =
+    mobileBgClass === "bg-MIAMblack" ? "mix-blend-lighten md:mix-blend-darken" : "mix-blend-darken";
 
-  const basePillClass =
-    isMobileBlack || isMobileViolet || isMobileTomato
-      ? "border-MIAMwhite text-MIAMwhite md:border-MIAMblack md:text-MIAMblack"
-      : "border-MIAMblack text-MIAMblack";
-
-  // Image: si bg mobile = black => invert en base (et pas de mix-blend-darken)
-  const imageBaseMobileClass = isMobileBlack ? "invert" : "mix-blend-darken";
-
-  // -------------------------------------
-
+  // Variantes desktop au hover selon la couleur tirée
   let hoverTextClass = "md:hover:text-MIAMblack";
-  // par défaut on inverse au hover desktop ; si hover black desktop, pas de mix-blend-darken
   let imageHoverClass = "md:group-hover:invert duration-500";
   let categoryHoverClass = "md:group-hover:text-MIAMblack md:group-hover:border-MIAMblack";
 
@@ -98,26 +115,37 @@ const Card = ({
     hoverTextClass = "md:hover:text-MIAMwhite";
     imageHoverClass = "md:group-hover:mix-blend-lighten md:group-hover:invert duration-500";
     categoryHoverClass = "md:group-hover:text-MIAMwhite md:group-hover:border-MIAMwhite";
+  } else if (hoverBgClass === "md:hover:bg-MIAMviolet" || hoverBgClass === "md:hover:bg-MIAMtomato") {
+    hoverTextClass = "md:hover:text-MIAMwhite";
+    categoryHoverClass = "md:group-hover:text-MIAMwhite md:group-hover:border-MIAMwhite";
   } else if (hoverBgClass === "md:hover:bg-MIAMlime") {
     hoverTextClass = "md:hover:text-MIAMblack";
+    imageHoverClass = "md:group-hover:mix-blend-darken md:group-hover:invert duration-500";
     categoryHoverClass = "md:group-hover:text-MIAMblack md:group-hover:border-MIAMblack";
   }
 
   const blocksForPreview =
     Array.isArray(descriptionBlocks) && descriptionBlocks.length > 0
       ? descriptionBlocks
-      : (Array.isArray(contentBlocks) && contentBlocks.length > 0 ? contentBlocks : null);
+      : Array.isArray(contentBlocks) && contentBlocks.length > 0
+      ? contentBlocks
+      : null;
+
+  const href = {
+    pathname: `/${locale || "fr"}/events/${slug}`,
+    query: startDate ? { on: startDate } : undefined,
+  };
 
   return (
-    <Link href={`/${locale || "fr"}/events/${slug}`} className="block ">
+    <Link href={href} className="block">
       <article
         className={[
           "font-haas p-4 pb-8 group transition duration-500 cursor-pointer",
-          "md:bg-transparent ", // desktop: transparent par défaut
-          hoverBgClass,         // desktop: couleur au hover
+          "md:bg-transparent",
+          hoverBgClass,
           hoverTextClass,
-          mobileBgClass,        // mobile: couleur aléatoire ou transparent 1/2
-          baseTextClass,        // mobile: texte en blanc si bg tomato/violet/black
+          mobileBgClass,
+          baseTextClass,
         ].join(" ")}
       >
         <h2 className="mb-2">{title}</h2>
@@ -130,8 +158,8 @@ const Card = ({
             alt={title}
             className={[
               "transition duration-500",
-              imageBaseMobileClass, // mobile: invert si bg black, sinon mix-blend-darken
-              imageHoverClass,      // desktop: comportement au hover (inchangé sauf black)
+              imageBaseMobileClass, // mobile behavior (lighten si noir)
+              imageHoverClass,      // desktop hover behavior
             ].join(" ")}
             sizes="(min-width:1024px) 33vw, (min-width:768px) 50vw, 100vw"
           />
@@ -145,14 +173,13 @@ const Card = ({
         )}
 
         {blocksForPreview ? (
-          <div className="pt-1 pb-4 prose prose-sm max-w-none line-clamp-3 [&_*]:!my-0">
-            <RichTextServer value={blocksForPreview} />
+          <div className="pt-1 pb-4 prose prose-sm max-w-none line-clamp-3 text-inherit [&_*]:text-inherit [&_*]:!my-0">
+            {/* @ts-expect-error Server Component in Client boundary allowed by Next */}
+            <RichTextServer value={blocksForPreview} tone="inherit" />
           </div>
         ) : (
           description && (
-            <p className="leading-tight block line-clamp-3">
-              {description}
-            </p>
+            <p className="leading-tight block line-clamp-3 text-inherit">{description}</p>
           )
         )}
 

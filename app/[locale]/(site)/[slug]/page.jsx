@@ -1,7 +1,6 @@
 // app/[locale]/(site)/[slug]/page.jsx
 import { notFound } from "next/navigation";
 import RenderBlocks from "@/app/components/cms/RenderBlocks";
-import Paragraphs from "@/app/components/paragraphs/Paragraphs";
 import { getPageBySlug } from "@/app/lib/strapi";
 import RichTextServer from "@/app/components/ui/RichText";
 import BreadcrumbsServer from "@/app/components/ui/Breadcrumbs";
