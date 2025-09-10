@@ -171,13 +171,12 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
   return (
     <nav
       className={[
-        "fixed z-50  top-0 left-0 right-0 md:border-b md:h-auto h-full",
+        "fixed z-50 bg-white top-0 left-0 right-0 md:border-b md:h-auto h-full",
         "transition-transform duration-300 will-change-transform",
         hiddenByScroll ? "-translate-y-full" : "translate-y-0",
       ].join(" ")}
     >
       <div className="mx-auto flex items-center h-20 justify-between p-4">
-        {/* Desktop */}
         <div className="hidden md:flex items-center justify-between w-full">
           <Link href={homeHref} className="inline-flex items-center">
             <Image src="/logo/MIAM.svg" width={100} height={80} alt="MIAM" className="w-32" />
@@ -193,7 +192,6 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
           />
         </div>
 
-        {/* Mobile header */}
         <div className="flex  md:hidden items-center justify-between w-full">
           <Link href={homeHref} className="inline-flex items-center">
             <Image src="/logo/MIAM.svg" width={100} height={200} alt="MIAM" />
@@ -213,16 +211,13 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
         </div>
       </div>
 
-      {/* Drawer mobile */}
       {menuOpen && (
         <div className="md:hidden" id="mobile-drawer">
-          {/* Overlay */}
           <button
             aria-label="Fermer le menu"
             className="fixed inset-0 bg-black/40"
             onClick={closeMenu}
           />
-          {/* Panneau */}
           <div className="fixed top-0 right-0 bottom-0 w-[85%] max-w-sm bg-white shadow-xl p-4 overflow-y-auto">
             <div className="flex items-center justify-between mb-2">
               <span className="font-medium">Menu</span>

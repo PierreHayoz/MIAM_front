@@ -20,7 +20,6 @@ export default async function LocaleLayout({ children, params }) {
       <IllustrationList />
       <ScrollToTopLenis />
       <Navigation currentLocale={locale} nav={nav} />
-      
       <NavDataProvider value={{ nav, locale }}>
         <div className="pt-40">{children}</div>
       </NavDataProvider>
