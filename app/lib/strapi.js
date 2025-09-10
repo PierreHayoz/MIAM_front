@@ -104,7 +104,7 @@ export async function getPageBySlug(slug, { locale = "fr", preview = false } = {
     "populate[blocks][populate]": "*",
     "populate[blocks][on][blocks.events-list][populate]": "true",
     "populate[blocks][on][blocks.paragraphes][populate]": "*",
-    "populate[blocks][on][blocks.membres][populate]": "*",
+    "populate[blocks][on][blocks.membres][populate]": "true",
     "populate[blocks][on][blocks.glossaires][populate]": "true",
     "populate[blocks][on][blocks.banner][populate]": "*",
     "populate[blocks][on][blocks.paragraphes][populate]": "*",
