@@ -125,7 +125,7 @@ export async function getPageBySlug(slug, { locale = "fr", preview = false } = {
 export async function getGlobal({
   locale = "fr",
   preview = false,
-  next = { revalidate: 600 },
+  next = { revalidate: 0 },
 } = {}) {
   const params = {
     ...(preview ? { publicationState: "preview" } : {}),
