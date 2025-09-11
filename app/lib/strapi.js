@@ -107,6 +107,7 @@ export async function getPageBySlug(slug, { locale = "fr", preview = false } = {
     "populate[blocks][on][blocks.membres][populate]": "true",
     "populate[blocks][on][blocks.glossaires][populate]": "true",
     "populate[blocks][on][blocks.banner][populate]": "*",
+    "populate[blocks][on][blocks.map][populate]": "*",
     "populate[blocks][on][blocks.paragraphes][populate]": "*",
     "populate[blocks][on][blocks.mid-paragraph][populate]": "*",
     "populate[blocks][on][blocks.gallery-media][populate][gallery][populate]": "*",
@@ -130,7 +131,10 @@ export async function getGlobal({
   const params = {
     ...(preview ? { publicationState: "preview" } : {}),
     ...(locale ? { locale } : {}),
+    "populate[contact][populate]": "true",
 
+    // 👉 socials (repeatable component)
+    "populate[socials][populate]": "*",
     // Peuple la DZ + cible le bloc events-suggestions et ses champs
     "populate[blocks][populate]": "true",
     "populate[blocks][on][shared.events-suggestions][fields][0]": "title",
@@ -203,7 +207,6 @@ function toISODate(d) {
   const s = String(d);
   return s.length >= 10 ? s.slice(0, 10) : null; // "YYYY-MM-DD"
 }
-const trimTime = (t) => (t ? String(t).slice(0, 5) : null);
 
 function mapEvent(entry) {
   // entrée Strapi v4/v5
@@ -218,7 +221,37 @@ function mapEvent(entry) {
 
   // helpers locaux
   const trimTime = (t) => (t ? String(t).slice(0, 5) : null);
+ const parseDoorOpening = (v) => {
+    if (!v) return null;
+    const s = String(v);
 
+    // ISO datetime (Strapi datetime) -> on découpe date/heure
+    if (s.includes("T")) {
+      // Essaye d’uniformiser en ISO
+      let iso = null;
+      try { iso = new Date(s).toISOString(); } catch {}
+      const isoStr = iso || s;
+      return {
+        date: isoStr.slice(0,10),
+        time: isoStr.slice(11,16),
+        iso:  isoStr,
+        raw:  v,
+      };
+    }
+
+    // time seul "HH:MM"
+    if (/^\d{2}:\d{2}/.test(s)) {
+      return { date: null, time: s.slice(0,5), iso: null, raw: v };
+    }
+
+    // date seule "YYYY-MM-DD"
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+      return { date: s.slice(0,10), time: null, iso: null, raw: v };
+    }
+
+    // fallback
+    return { date: null, time: null, iso: null, raw: v };
+  };
   // ---------- OCCURRENCES (shared.date-occurence) ----------
   // NB: ton schéma = "occurences" (orthographe)
   const occRaw = Array.isArray(e.occurences) ? e.occurences : [];
@@ -358,6 +391,12 @@ function mapEvent(entry) {
     categories: pickCategories(e),
 
     locale: e.locale ?? null,
+
+    // 🔥 NOUVEAUX CHAMPS
+    warning:   e.warning || null,          // text
+    moreInfos: e.moreInfos || null,        // text
+    doorOpening: parseDoorOpening(e.doorOpening), // {date,time,iso,raw}|null
+
     publishedAt: e.publishedAt ?? null,
   };
 }

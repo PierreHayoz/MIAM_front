@@ -69,11 +69,10 @@ export default function SectionCtaBlock({ block, locale = "fr" }) {
   const imageLeft = a.image_left === true;
   const txtCol = "flex flex-col col-span-4 md:col-span-2 justify-between";
   const imgCol = "col-span-4 md:col-span-2";
-
   return (
     <section className="p-4 grid grid-cols-4 gap-4 py-16">
-      {imageLeft && img && (
-        <div className="col-span-2">
+      {img && (
+        <div className={`col-span-2 ${a.image_left && 'order-1'}`}>
           <Image
             src={img}
             width={800}
@@ -113,25 +112,7 @@ export default function SectionCtaBlock({ block, locale = "fr" }) {
           )
         )}
 
-        {/* Si tu préfères montrer un bouton désactivé quand il manque l’URL :
-        {!link?.href && a?.button?.label && (
-          <span className="mt-3 opacity-50 border rounded-full px-3 py-1 w-fit cursor-not-allowed">
-            {a.button.label}
-          </span>
-        )} */}
       </div>
-
-      {/* Image à droite ? */}
-      {!imageLeft && img && (
-        <Image
-          src={img}
-          width={800}
-          height={800}
-          alt={a?.image?.alternativeText || a?.title || ""}
-          className={`${imgCol} object-contain mix-blend-lighten`}
-          sizes="(min-width:1024px) 50vw, 100vw"
-        />
-      )}
     </section>
   );
 }

@@ -172,16 +172,11 @@ const Card = ({
           </div>
         )}
 
-        {blocksForPreview ? (
-          <div className="pt-1 pb-4 prose prose-sm max-w-none line-clamp-3 text-inherit [&_*]:text-inherit [&_*]:!my-0">
-            {/* @ts-expect-error Server Component in Client boundary allowed by Next */}
+        {blocksForPreview &&
+          <div className="pt-1 pb-4 prose prose-sm max-w-none  text-inherit [&_*]:text-inherit [&_*]:!my-0">
             <RichTextServer value={blocksForPreview} tone="inherit" />
           </div>
-        ) : (
-          description && (
-            <p className="leading-tight block line-clamp-3 text-inherit">{description}</p>
-          )
-        )}
+      }
 
         <CategoryPills
           categories={categories}

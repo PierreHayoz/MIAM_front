@@ -209,26 +209,29 @@ export default function LogoBarsWave({
       S.speed += (targetSpeed - S.speed) * aSpeed;
 
       // ====== dessin des barres ======
-      const barCount = Math.max(1, Math.floor(bars));
-      const barW = totalW / barCount;
+const barCount = Math.max(1, Math.floor(bars));      const barW = totalW / barCount;
 
       for (let i = 0; i < barCount; i++) {
-        const sx = Math.round(i * barW);
-        const sw = Math.ceil(barW);
-        const dx = sx, dw = sw;
+  // bornes source ET destination identiques, à l’entier près
+  const sx = Math.floor((i    ) * totalW / barCount);
+  const sxNext = Math.floor((i + 1) * totalW / barCount);
+  const sw = Math.max(1, sxNext - sx);
 
-        const distX = Math.abs(S.x - (sx + dw * 0.5));
-        const fall = Math.exp(-Math.max(0, distX - hoverRadius * dpr) * (falloff / dpr));
+  const dx = sx;
+  const dw = sw;
 
-        const phase = (now / 1000) * 3 * S.speed + i * frequency * 10;
-        const offset = Math.sin(phase) * (amplitude * dpr) * fall * S.influence;
+  const distX = Math.abs(S.x - (dx + dw * 0.5));
+  const fall = Math.exp(-Math.max(0, distX - hoverRadius * dpr) * (falloff / dpr));
 
-        const sy = padY;
-        const sh = innerH;
-        const dy = Math.max(-padY, Math.min(padY, offset));
+  const phase = (now / 1000) * 3 * S.speed + i * frequency * 10;
+  const offset = Math.sin(phase) * (amplitude * dpr) * fall * S.influence;
 
-        ctx.drawImage(offscreen, sx, sy, sw, sh, dx, sy + dy, dw, sh);
-      }
+  const sy = padY;
+  const sh = innerH;
+  const dy = Math.max(-padY, Math.min(padY, offset));
+
+  ctx.drawImage(offscreen, sx, sy, sw, sh, dx, sy + dy, dw, sh);
+}
     };
 
     rafRef.current = requestAnimationFrame(render);

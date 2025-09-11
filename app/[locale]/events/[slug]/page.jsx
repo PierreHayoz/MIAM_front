@@ -20,12 +20,29 @@ function formatTimeRange(e) {
   return startTime || endTime || null;
 }
 
+function formatDoorOpeningDisplay(door, locale) {
+  if (!door) return null;
+  if (door.time) return door.time; // cas le plus fréquent
+  if (door.iso) {
+    try {
+      return new Date(door.iso).toLocaleTimeString(
+        locale === "fr" ? "fr-CH" : locale,
+        { hour: "2-digit", minute: "2-digit" }
+      );
+    } catch { }
+  }
+  // si on a une date seule, on ne l’affiche pas en temps (trop ambigu)
+  return null;
+}
+
+
 export default async function EventPage({ params, searchParams }) {
   const { locale, slug } = await params;
   const sp = await searchParams;
   const onParam = Array.isArray(sp?.on) ? sp.on[0] : sp?.on;
 
   const e = await getEventBySlug(slug, { locale });
+  console.log(e)
   if (!e) return notFound();
 
   // — Global config (traduisible) —
@@ -67,7 +84,7 @@ export default async function EventPage({ params, searchParams }) {
     .slice(0, limit);
 
   const selectedDate =
-+    typeof onParam === "string" ? onParam.slice(0, 10) : null;
+    +    typeof onParam === "string" ? onParam.slice(0, 10) : null;
 
   // occurrence correspondante
   const occ = selectedDate
@@ -84,6 +101,7 @@ export default async function EventPage({ params, searchParams }) {
   } : e;
 
   const timeRange = formatTimeRange(evView);
+  const doorOpeningDisplay = formatDoorOpeningDisplay(e.doorOpening, locale);
   return (
     <article className="px-4">
       <div className="grid grid-cols-4 gap-2">
@@ -93,19 +111,25 @@ export default async function EventPage({ params, searchParams }) {
             {formatEventDateRange(evView)}
             {timeRange ? ` · ${timeRange}` : ""}
           </p>
+
+
+
+
+          {/* 🔸 Alerte / warning */}
+
           <div className="py-2">
-          {Array.isArray(e.categories) && e.categories.length > 0 && (
-            <CategoryPills categories={e.categories} />
-          )}
-</div>
-          
+            {Array.isArray(e.categories) && e.categories.length > 0 && (
+              <CategoryPills categories={e.categories} />
+            )}
+          </div>
+
 
           {Array.isArray(e.descriptionBlocks) && e.descriptionBlocks.length > 0 ? (
-              <RichText value={e.descriptionBlocks} />
+            <RichText value={e.descriptionBlocks} />
           ) : (
             e.description && <p className="text-lg whitespace-pre-line">{e.description}</p>
           )}
-         
+
 
           {Array.isArray(e.content) && e.content.length > 0 ? (
             <div>
@@ -114,25 +138,39 @@ export default async function EventPage({ params, searchParams }) {
           ) : (
             e.content && <p className="">{e.content}</p>
           )}
-{e.isKidsFriendly === false && (
-            <div className="mt-2 text-xs  py-2 rounded  text-MIAMtomato">
-              Cet événement n’est pas recommandé pour les enfants.
+          {e.warning && (
+            <div
+              className="mt-3 
+                         text-MIAMtomato"
+            >
+              {e.warning}
             </div>
+          )}
+          {/* 🔸 Infos complémentaires */}
+          {e.moreInfos && (
+            <div className="mt-3 text-base whitespace-pre-line">
+              {e.moreInfos}
+            </div>
+          )}
+          {doorOpeningDisplay && (
+            <p className="bg-black rounded-full text-white px-2 w-fit mt-4">
+              Ouverture des portes&nbsp;: {doorOpeningDisplay}
+            </p>
           )}
           {e.ticketUrl && !e.isFree && (
             <div className="pt-2 items-center gap-2">
-               {(e.isFree || (Array.isArray(e.prices) && e.prices.length) || e.price) && (
-            <div className="mt-2 mb-4">
-              <PriceList
-                prices={e.prices}
-                isFree={e.isFree}
-                locale={locale === "fr" ? "fr-CH" : locale}
-                defaultCurrency="CHF"
-              />
-           
-            </div>
-          )}
-            
+              {(e.isFree || (Array.isArray(e.prices) && e.prices.length) || e.price) && (
+                <div className="mt-2 mb-4">
+                  <PriceList
+                    prices={e.prices}
+                    isFree={e.isFree}
+                    locale={locale === "fr" ? "fr-CH" : locale}
+                    defaultCurrency="CHF"
+                  />
+
+                </div>
+              )}
+
               <Link
                 href={e.ticketUrl}
                 target="_blank"
@@ -141,9 +179,9 @@ export default async function EventPage({ params, searchParams }) {
               >
                 Acheter des billets
               </Link>
-              
+
             </div>
-            
+
           )}
         </header>
 

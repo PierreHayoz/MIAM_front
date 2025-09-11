@@ -2,12 +2,12 @@
 
 @theme {
   /* tokens bruts */
-  --color-MIAMblack:    #071013; /* très sombre */
+  --color-MIAMblack:    #000000; /* très sombre */
   --color-MIAMgreen:   #136F63; /* vert/bleu */
-  --color-MIAMlime:   #CCFF66; /* lime fluo */
+  --color-MIAMlime:#CCFF66; /* lime fluo */
   --color-MIAMtomato: #F34213; /* orange/rouge */
   --color-MIAMviolet: #7067CF; /* violet/indigo */
-  --color-MIAMwhite: #F0F0F0; /* violet/indigo */
+  --color-MIAMwhite: #FFFFFF; /* violet/indigo */
   --color-MIAMgrey: #c5c4c4; /* violet/indigo */
   --color-MIAMgreytext: #636363;
   --color-MIAMlightgrey: #e1e0e0; /* violet/indigo */

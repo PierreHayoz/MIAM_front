@@ -7,12 +7,14 @@ import { getGlobal } from '@/app/lib/strapi';
 export default async function Footer() {
   const global = await getGlobal({ locale: 'fr' }); // ajuste si tu gères i18n autrement
   const c = global?.contact || null;
-  const socials = Array.isArray(global?.socialLinks)
-    ? global.socialLinks.map(s => ({
+
+  const socials = Array.isArray(global?.socials)
+    ? global.socials.map(s => ({
         label: s?.label || s?.labe || '', // fallback si le champ s'appelle encore "labe"
         url: s?.url || '#',
       })).filter(s => s.label && s.url)
     : [];
+  console.log(global,'loooool')
 
   const AddressBlock = () => {
     const addressLines = [

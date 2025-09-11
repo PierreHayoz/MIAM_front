@@ -107,9 +107,7 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
       </aside>
 
       <main className="col-span-4 md:col-span-3 md:px-4">
-        <p className="text-sm text-MIAMgrey mb-4">
-          {filtered.length} occurrence{filtered.length > 1 ? 's' : ''}
-        </p>
+    
 
         {filtered.length === 0 ? (
           <div className="text-MIAMgrey py-16 text-center">

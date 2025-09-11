@@ -8,6 +8,7 @@ import IllustrationList from '../components/Illustrations/IllustrationList';
 import { NavDataProvider } from '../providers/NavDataProvider';
 import Footer from '../components/footer/Footer';
 import Navigation from '../components/navigation/Navigation';
+import 'leaflet/dist/leaflet.css';
 
 export default async function LocaleLayout({ children, params }) {
   const { locale } = await params;

@@ -9,6 +9,7 @@ import {
 import RichTextServer from "../ui/RichText";
 import DirectoryReveal, { mapStrapi } from "../DirectoryReveal";
 import PartnersStrip from "../partners/Partners";
+import ContactMap from "./ContactMap";
 
 // utils
 const todayISO = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -163,7 +164,8 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
           </div>);
         break;
       }
-
+      case 'blocks.map':
+      return <ContactMap lat={b.latitude} lng={b.longitude} label={b.label}/>;
       case "blocks.paragraphes": {
         out.push(
           <div key={`paragraphes-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 pb-8">
@@ -205,7 +207,6 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
         );
         break;
       }
-
       default:
         break;
     }
