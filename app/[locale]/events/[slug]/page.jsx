@@ -12,7 +12,15 @@ import RichText from "@/app/components/ui/RichText";
 import PriceList from "@/app/components/ui/PriceList";
 
 export const revalidate = 0;
-
+function doorOpeningLabel(locale) {
+  const lang = (locale || "fr").toLowerCase().split("-")[0]; // "fr-CH" -> "fr"
+  switch (lang) {
+    case "fr": return "Ouverture des portes";
+    case "en": return "Doors opening";
+    case "de": return "Türöffnung";
+    default:   return "Doors opening"; // fallback
+  }
+}
 function formatTimeRange(e) {
   const { startTime, endTime } = e || {};
   if (!startTime && !endTime) return null;
@@ -153,10 +161,11 @@ export default async function EventPage({ params, searchParams }) {
             </div>
           )}
           {doorOpeningDisplay && (
-            <p className="bg-black rounded-full text-white px-2 w-fit mt-4">
-              Ouverture des portes&nbsp;: {doorOpeningDisplay}
-            </p>
-          )}
+  <p className="bg-black rounded-full text-white px-2 w-fit mt-4">
+    {doorOpeningLabel(locale)}&nbsp;: {doorOpeningDisplay}
+  </p>
+)}
+
           {e.ticketUrl && !e.isFree && (
             <div className="pt-2 items-center gap-2">
               {(e.isFree || (Array.isArray(e.prices) && e.prices.length) || e.price) && (

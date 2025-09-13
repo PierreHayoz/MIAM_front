@@ -11,6 +11,7 @@ export default function HomeIntroShell({ children }) {
     return (
         <>
             <Navigation currentLocale={locale} nav={nav} />
+            <p>immersive space</p>
             <LogoBarsWave
                 src="/logo/MIAM.svg"
                 height={200}

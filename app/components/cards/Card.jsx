@@ -1,9 +1,8 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CategoryPills from "../ui/CategoryPills";
-import RichTextServer from "../ui/RichText";
 
 /** Desktop hover classes (cohérentes ≥ md) */
 const HOVER_BG_CLASSES = [
@@ -27,14 +26,57 @@ function randUint() {
     crypto.getRandomValues(a);
     return a[0] >>> 0;
   }
-  // fallback
   return (Math.random() * 0xffffffff) >>> 0;
 }
-const pickR = (arr, r) => arr[r % arr.length];
+
+/** ====== Utils preview texte ====== */
+function safeTruncate(input, max = 120) {
+  if (!input) return "";
+  const s = input.replace(/\s+/g, " ").trim();
+  if (s.length <= max) return s;
+
+  const lowerBound = Math.floor(max * 0.7);
+  let cut = s.lastIndexOf(" ", max);
+  if (cut < lowerBound) cut = max;
+  return s.slice(0, cut).trimEnd() + "…";
+}
+
+function blocksToPlainText(blocks) {
+  if (!blocks) return "";
+
+  const collect = (node, out = []) => {
+    if (!node) return out;
+
+    if (Array.isArray(node)) {
+      node.forEach((n) => collect(n, out));
+      return out;
+    }
+
+    if (typeof node === "object") {
+      if (typeof node.text === "string") out.push(node.text);
+      if (Array.isArray(node.children)) node.children.forEach((c) => collect(c, out));
+      if (typeof node.value === "string") out.push(node.value);
+      if (Array.isArray(node.content)) node.content.forEach((c) => collect(c, out));
+
+      if (node._type === "block" && Array.isArray(node.children)) {
+        const text = node.children.map((c) => c.text || "").join("");
+        if (text) out.push(text);
+      }
+
+      for (const key in node) {
+        if (["children", "content", "text", "value"].includes(key)) continue;
+        const v = node[key];
+        if (Array.isArray(v) || (typeof v === "object" && v !== null)) collect(v, out);
+      }
+    }
+    return out;
+  };
+
+  return collect(blocks, []).join(" ").replace(/\s+/g, " ").trim();
+}
 
 const Card = ({
   index,
-  id,
   locale,
   slug,
   title,
@@ -48,7 +90,6 @@ const Card = ({
   contentBlocks = null,
   categories = [],
 }) => {
-  /** ====== Formatages ====== */
   const formatDateRange = (s, e) => {
     if (!s) return null;
     const fmt = new Intl.DateTimeFormat("fr-CH", {
@@ -62,6 +103,7 @@ const Card = ({
     const end = fmt.format(new Date(e));
     return `${start} → ${end}`;
   };
+
   const formatTimeRange = (s, e) => {
     if (!s && !e) return null;
     if (s && e) return `${s} – ${e}`;
@@ -71,21 +113,18 @@ const Card = ({
   const dateLabel = formatDateRange(startDate, endDate);
   const timeLabel = formatTimeRange(startTime, endTime);
 
-  /** ====== Tirages aléatoires (stables par carte via useRef) ====== */
-  // Hover desktop : tirage + “reroll” si noir pour varier
   const hoverIdxRef = useRef(null);
   if (hoverIdxRef.current === null) {
     let r = randUint();
     let idx = r % HOVER_BG_CLASSES.length;
     if (HOVER_BG_CLASSES[idx] === "md:hover:bg-MIAMblack") {
-      r = randUint(); // reroll 1x si noir
+      r = randUint();
       idx = r % HOVER_BG_CLASSES.length;
     }
     hoverIdxRef.current = idx;
   }
   const hoverBgClass = HOVER_BG_CLASSES[hoverIdxRef.current];
 
-  // Mobile background : conserver 1/2 transparent (index impair), sinon couleur aléatoire
   const mobileIdxRef = useRef(null);
   if (mobileIdxRef.current === null) {
     mobileIdxRef.current = randUint() % MOBILE_BG_CLASSES.length;
@@ -95,18 +134,15 @@ const Card = ({
       ? "bg-transparent"
       : MOBILE_BG_CLASSES[mobileIdxRef.current];
 
-  // Dérivés
   const isMobileDark = ["bg-MIAMblack", "bg-MIAMviolet", "bg-MIAMtomato"].includes(mobileBgClass);
   const baseTextClass = isMobileDark ? "text-MIAMwhite md:text-MIAMblack" : "text-MIAMblack";
   const basePillClass = isMobileDark
     ? "border-MIAMwhite text-MIAMwhite md:border-MIAMblack md:text-MIAMblack"
     : "border-MIAMblack text-MIAMblack";
 
-  // Mobile: si fond noir -> lighten, sinon darken
   const imageBaseMobileClass =
     mobileBgClass === "bg-MIAMblack" ? "mix-blend-lighten md:mix-blend-darken" : "mix-blend-darken";
 
-  // Variantes desktop au hover selon la couleur tirée
   let hoverTextClass = "md:hover:text-MIAMblack";
   let imageHoverClass = "md:group-hover:invert duration-500";
   let categoryHoverClass = "md:group-hover:text-MIAMblack md:group-hover:border-MIAMblack";
@@ -115,7 +151,10 @@ const Card = ({
     hoverTextClass = "md:hover:text-MIAMwhite";
     imageHoverClass = "md:group-hover:mix-blend-lighten md:group-hover:invert duration-500";
     categoryHoverClass = "md:group-hover:text-MIAMwhite md:group-hover:border-MIAMwhite";
-  } else if (hoverBgClass === "md:hover:bg-MIAMviolet" || hoverBgClass === "md:hover:bg-MIAMtomato") {
+  } else if (
+    hoverBgClass === "md:hover:bg-MIAMviolet" ||
+    hoverBgClass === "md:hover:bg-MIAMtomato"
+  ) {
     hoverTextClass = "md:hover:text-MIAMwhite";
     categoryHoverClass = "md:group-hover:text-MIAMwhite md:group-hover:border-MIAMwhite";
   } else if (hoverBgClass === "md:hover:bg-MIAMlime") {
@@ -130,6 +169,17 @@ const Card = ({
       : Array.isArray(contentBlocks) && contentBlocks.length > 0
       ? contentBlocks
       : null;
+
+  const previewText = useMemo(() => {
+    if (typeof description === "string" && description.trim().length > 0) {
+      return safeTruncate(description, 120);
+    }
+    if (blocksForPreview) {
+      const plain = blocksToPlainText(blocksForPreview);
+      return safeTruncate(plain, 120);
+    }
+    return "";
+  }, [description, blocksForPreview]);
 
   const href = {
     pathname: `/${locale || "fr"}/events/${slug}`,
@@ -158,8 +208,8 @@ const Card = ({
             alt={title}
             className={[
               "transition duration-500",
-              imageBaseMobileClass, // mobile behavior (lighten si noir)
-              imageHoverClass,      // desktop hover behavior
+              imageBaseMobileClass,
+              imageHoverClass,
             ].join(" ")}
             sizes="(min-width:1024px) 33vw, (min-width:768px) 50vw, 100vw"
           />
@@ -172,11 +222,11 @@ const Card = ({
           </div>
         )}
 
-        {blocksForPreview &&
-          <div className="pt-1 pb-4 prose prose-sm max-w-none  text-inherit [&_*]:text-inherit [&_*]:!my-0">
-            <RichTextServer value={blocksForPreview} tone="inherit" />
-          </div>
-      }
+        {previewText && (
+          <p className="pt-1 pb-4 prose prose-sm max-w-none text-inherit [&_*]:text-inherit [&_*]:!my-0">
+            {previewText}
+          </p>
+        )}
 
         <CategoryPills
           categories={categories}
