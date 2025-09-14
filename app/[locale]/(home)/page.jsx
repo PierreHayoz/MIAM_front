@@ -13,8 +13,8 @@ function lang(locale) {
 
 const PROGRAM_PATH = {
   fr: "/fr/programme",
-  en: "/en/programming",
-  de: "/de/programmierung",
+  en: "/en/program",
+  de: "/de/programm",
 };
 
 function discoverProgramLabel(locale) {
