@@ -14,7 +14,7 @@ export default function PartnersListBlock({ block }) {
 
   return (
     <section className="grid grid-cols-1 md:grid-cols-4 px-4">
-        <div className="col-span-2 col-start-2">
+        <div className="md:col-span-2 md:col-start-2">
       {paragraphe ? (
         <div className="mb-6">
           <RichTextServer value={b.paragraphe} />
