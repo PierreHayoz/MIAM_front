@@ -28,6 +28,7 @@ export default function GalleryMedia({ items = [] }) {
                     height={800}
                     className="mix-blend-darken w-full h-auto"
                   />
+                  <div className="text-xs w-full text-center">{alt || m.media.caption}</div>
                 </>
               )}
             </div>
