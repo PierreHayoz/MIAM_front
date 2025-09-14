@@ -63,7 +63,7 @@ export default function DirectoryReveal({
     };
 
     return (
-        <section className="mt-8 mb-8">
+        <section className=" mb-8">
             {heading ? <h2 className="text-xl mb-4 ">{heading}</h2> : null}
             <RevealList
                 items={list}
