@@ -4,8 +4,8 @@ const TIMEZONE = "Europe/Zurich";
 
 // Date en timezone locale (retourne un Date UTC correspondant au local time demandé)
 export function dateInTimeZone({ timeZone = TIMEZONE, year, month, day, hour = 0, minute = 0, second = 0 }) {
-  const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
-  const fmt = new Intl.DateTimeFormat("en-US", {
+  const asIfUTC = Date.UTC(year, month - 1, day, hour, minute, second);
+ const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",
     month: "2-digit",
@@ -15,12 +15,16 @@ export function dateInTimeZone({ timeZone = TIMEZONE, year, month, day, hour = 0
     second: "2-digit",
     hour12: false,
   });
-  const parts = Object.fromEntries(fmt.formatToParts(utcDate).map((p) => [p.type, p.value]));
-  const asUTC = Date.UTC(
+  const parts = Object.fromEntries(
+    fmt.formatToParts(new Date(asIfUTC)).map((p) => [p.type, p.value])
+  );
+  const projected = Date.UTC(
     Number(parts.year), Number(parts.month) - 1, Number(parts.day),
     Number(parts.hour), Number(parts.minute), Number(parts.second)
   );
-  return new Date(asUTC);
+  const offsetMs = projected - asIfUTC;
+ // on le RETIRE pour obtenir l’instant UTC correct
+ return new Date(asIfUTC - offsetMs);
 }
 
 // Parse "YYYY-MM-DD" + "HH:mm" en Europe/Zurich
@@ -98,13 +102,18 @@ function normalizeTags(tags) {
   return [];
 }
 export function eventTags(e) { return normalizeTags(e.tags ?? e.tag ?? e.categories ?? e.labels ?? e.keywords); }
+function ymdInTZ(d, timeZone = TIMEZONE) {
+  // "YYYY-MM-DD" en timeZone cible
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone, year: "numeric", month: "2-digit", day: "2-digit"
+  }).format(d);}
 
 export function formatEventDateRange(e, locale = "fr-CH", timeZone = TIMEZONE) {
   const start = getEventStartDate(e);
   const end = getEventEndDate(e) || start;
   if (!start && !end) return "";
   const fmt = new Intl.DateTimeFormat(locale, { timeZone, day: "2-digit", month: "short", year: "numeric" });
-  const same = start && end && start.toDateString() === end.toDateString();
-  return same ? fmt.format(start || end) : `${fmt.format(start)} → ${fmt.format(end)}`;
+ const same = start && end && ymdInTZ(start, timeZone) === ymdInTZ(end, timeZone);
+ return same ? fmt.format(start || end) : `${fmt.format(start)} → ${fmt.format(end)}`;
 }
 

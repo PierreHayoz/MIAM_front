@@ -12,6 +12,27 @@ import RichText from "@/app/components/ui/RichText";
 import PriceList from "@/app/components/ui/PriceList";
 
 export const revalidate = 0;
+
+function ctaLabel(locale, isReservation) {
+  const lang = (locale || "fr").toLowerCase().split("-")[0];
+  if (isReservation) {
+    switch (lang) {
+      case "fr": return "Réserver une place";
+      case "en": return "Reserve a seat";
+      case "de": return "Platz reservieren";
+      default: return "Reserve a seat";
+    }
+  } else {
+    switch (lang) {
+      case "fr": return "Acheter un billet";
+      case "en": return "Buy tickets";
+      case "de": return "Tickets kaufen";
+      default: return "Buy tickets";
+    }
+  }
+}
+
+
 function doorOpeningLabel(locale) {
   const lang = (locale || "fr").toLowerCase().split("-")[0]; // "fr-CH" -> "fr"
   switch (lang) {
@@ -35,7 +56,7 @@ function formatDoorOpeningDisplay(door, locale) {
     try {
       return new Date(door.iso).toLocaleTimeString(
         locale === "fr" ? "fr-CH" : locale,
-        { hour: "2-digit", minute: "2-digit" }
+        { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Zurich" }
       );
     } catch { }
   }
@@ -47,7 +68,7 @@ function formatDoorOpeningDisplay(door, locale) {
 export default async function EventPage(props) {
   const { params, searchParams } = props
   const { locale, slug } = await params           // ✅ on attend params
-  const sp = await searchParams      
+  const sp = await searchParams
   const onParam = Array.isArray(sp?.on) ? sp.on[0] : sp?.on;
 
   const e = await getEventBySlug(slug, { locale });
@@ -167,32 +188,30 @@ export default async function EventPage(props) {
             </p>
           )}
 
-          {e.ticketUrl && !e.isFree && (
-            <div className="pt-2 items-center gap-2">
-              {(e.isFree || (Array.isArray(e.prices) && e.prices.length) || e.price) && (
-                <div className="mt-2 mb-4">
-                  <PriceList
-                    prices={e.prices}
-                    isFree={e.isFree}
-                    locale={locale === "fr" ? "fr-CH" : locale}
-                    defaultCurrency="CHF"
-                  />
+         {e.ticketUrl && !e.isFree && (
+  <div className="pt-2 items-center gap-2">
+    {(e.isFree || (Array.isArray(e.prices) && e.prices.length) || e.price) && (
+      <div className="mt-2 mb-4">
+        <PriceList
+          prices={e.prices}
+          isFree={e.isFree}
+          locale={locale === "fr" ? "fr-CH" : locale}
+          defaultCurrency="CHF"
+        />
+      </div>
+    )}
 
-                </div>
-              )}
+    <Link
+      href={e.ticketUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block px-4 py-2 rounded-xs border border-MIAMblack text-MIAMblack hover:bg-MIAMblack hover:text-white transition-colors"
+    >
+      {ctaLabel(locale, e.isReservation)}
+    </Link>
+  </div>
+)}
 
-              <Link
-                href={e.ticketUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-4 py-2 rounded-xs border border-MIAMblack text-MIAMblack hover:bg-MIAMblack hover:text-white transition-colors"
-              >
-                Acheter des billets
-              </Link>
-
-            </div>
-
-          )}
         </header>
 
         <div className="col-span-4 md:col-span-2 md:pl-4">

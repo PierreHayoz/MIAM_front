@@ -16,14 +16,15 @@ const Newsletter = () => {
         body: JSON.stringify({ email }),
       });
 
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.ok) {
         setStatus("success");
         setEmail("");
       } else {
-        setStatus("error");
+        setStatus({ type: "error", msg: data?.error || "Erreur inconnue" });
       }
     } catch {
-      setStatus("error");
+      setStatus({ type: "error", msg: "Erreur réseau" });
     }
   }
 
@@ -61,9 +62,9 @@ const Newsletter = () => {
           Merci pour ton inscription 🎉
         </p>
       )}
-      {status === "error" && (
+      {status?.type === "error" && (
         <p className="text-red-600 mt-2 text-sm">
-          Une erreur est survenue, réessaie.
+          {String(status.msg || "Une erreur est survenue, réessaie.")}
         </p>
       )}
     </div>

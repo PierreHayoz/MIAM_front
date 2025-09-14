@@ -365,7 +365,7 @@ function mapEvent(entry) {
     descriptionBlocks,
     description: blocksToText(descriptionBlocks),
     content: e.content,
-
+    isReservation: e.isReservation,
     // ✅ occurrences normalisées
     occurrences,        // [{ date:'YYYY-MM-DD', startTime:'HH:MM'|null, endTime:'HH:MM'|null }]
     nextOccurrence,     // { ... } | null
