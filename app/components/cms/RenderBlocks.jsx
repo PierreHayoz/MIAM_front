@@ -72,14 +72,14 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
 
         out.push(
           <section key={`partners-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 px-4 py-6">
-            <div className="col-span-2 col-start-2">
+            <div className="md:col-span-2 md:col-start-2 col-span-4">
               {paragraphe ? (
                 <div className="mb-6 col-span-4">
                   <RichTextServer value={paragraphe} />
                 </div>
               ) : null}
             </div>
-            <div className="col-span-2 col-start-2">
+            <div className="md:col-span-2 col-span-4 md:col-start-2">
               <PartnersStrip items={items} />
             </div>
           </section>
