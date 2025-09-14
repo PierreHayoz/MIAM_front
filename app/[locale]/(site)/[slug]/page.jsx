@@ -7,56 +7,40 @@ import BreadcrumbsServer from "@/app/components/ui/Breadcrumbs";
 
 export const revalidate = 0;
 
-// 👇 Ajoute ceci
-export async function generateMetadata({ params }) {
-  const { locale, slug } = params;
+// ✅ params est une Promise ici — on l'attend
+export async function generateMetadata({ params: paramsPromise }) {
+  const { locale, slug } = await paramsPromise;
 
   const page = await getPageBySlug(slug, { locale });
   if (!page) {
-    // Tu peux soit retourner un titre 404, soit déclencher une 404 ici
-    // notFound();
     return { title: "Page introuvable" };
   }
 
   const title = page.seo?.title ?? page.pageTitle ?? "Page";
   const description = page.seo?.description ?? page.parag?.slice(0, 160);
-
-  // Si tu as défini metadataBase dans le root layout, tu peux mettre des URLs relatives
   const urlPath = `/${locale}/${slug}`;
 
   return {
-    title,               
+    title,
     description,
     alternates: {
       canonical: urlPath,
-      // hreflang si tu as d’autres locales:
       languages: page.alternates?.reduce?.((acc, alt) => {
         acc[alt.locale] = `/${alt.locale}/${alt.slug}`;
         return acc;
       }, {}) ?? undefined,
     },
-    openGraph: {
-      type: "article",
-      title,
-      description,
-      url: urlPath,
-      // images: [{ url: `/api/og?title=${encodeURIComponent(title)}` }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-    },
-    robots: {
-      index: !page.seo?.noindex,
-      follow: !page.seo?.nofollow,
-    },
+    openGraph: { type: "article", title, description, url: urlPath },
+    twitter: { card: "summary_large_image", title, description },
+    robots: { index: !page.seo?.noindex, follow: !page.seo?.nofollow },
   };
 }
 
-export default async function Page({ params, searchParams }) {
-  const { locale, slug } = params;
-  const sp = searchParams;
+export default async function Page(props) {
+  // ✅ idem ici: params ET searchParams sont des Promises
+  const { params: paramsPromise, searchParams: spPromise } = props;
+  const { locale, slug } = await paramsPromise;
+  const sp = await spPromise;
 
   const page = await getPageBySlug(slug, { locale });
   if (!page) return notFound();

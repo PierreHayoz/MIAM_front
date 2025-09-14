@@ -67,18 +67,18 @@ export default function SectionCtaBlock({ block, locale = "fr" }) {
 
   // Option de mise en page si tu veux utiliser image_left fourni par Strapi
   const imageLeft = a.image_left === true;
-  const txtCol = "flex flex-col col-span-4 md:col-span-2 justify-between";
-  const imgCol = "col-span-4 md:col-span-2";
+  const txtCol = "flex flex-col col-span-4 md:col-span-1 justify-between";
+  const imgCol = "col-span-4 md:col-span-3";
   return (
     <section className="p-4 grid grid-cols-4 gap-4 py-16">
       {img && (
-        <div className={`col-span-4 md:col-span-2 ${a.image_left && 'md:order-1'}`}>
+        <div className={`col-span-4 md:col-span-3 ${a.image_left && 'md:order-1'}`}>
           <Image
             src={img}
             width={800}
             height={800}
             alt={a.image.caption}
-            className={`${imgCol} object-contain order-1`}
+            className={`${imgCol} object-cover w-full  order-1`}
           />
           <div className="text-xs w-full text-center">{a.image.caption}</div>
         </div>
