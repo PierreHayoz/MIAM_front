@@ -72,20 +72,19 @@ export default function SectionCtaBlock({ block, locale = "fr" }) {
   return (
     <section className="p-4 grid grid-cols-4 gap-4 py-16">
       {img && (
-        <div className={`col-span-2 ${a.image_left && 'order-1'}`}>
+        <div className={`col-span-4 md:col-span-2 ${a.image_left && 'md:order-1'}`}>
           <Image
             src={img}
             width={800}
             height={800}
             alt={a.image.caption}
-            className={`${imgCol} object-contain `}
+            className={`${imgCol} object-contain order-1`}
           />
           <div className="text-xs w-full text-center">{a.image.caption}</div>
         </div>
       )}
 
       <div className={txtCol}>
-        {title ? <h2 className="text-2xl mb-2">{title}</h2> : null}
         {typeof paragraph === "string" ? (
           <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: paragraph }} />
         ) : paragraph ? (
