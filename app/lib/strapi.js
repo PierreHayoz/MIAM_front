@@ -107,6 +107,7 @@ export async function getPageBySlug(slug, { locale = "fr", preview = false } = {
     "populate[blocks][on][blocks.membres][populate]": "true",
     "populate[blocks][on][blocks.glossaires][populate]": "true",
     "populate[blocks][on][blocks.banner][populate]": "*",
+    "populate[blocks][on][blocks.button][populate]": "*",
     "populate[blocks][on][blocks.map][populate]": "*",
     "populate[blocks][on][blocks.paragraphes][populate]": "*",
     "populate[blocks][on][blocks.mid-paragraph][populate]": "*",
@@ -500,13 +501,11 @@ export async function getEvents({
       "pagination[page]": page,
       "pagination[pageSize]": pageSizeClamped,
     };
-
     const data = await doFetch(`/api/events`, { params: pageParams, next });
     const items = data?.data || [];
     const pag = data?.meta?.pagination || {};
 
     all.push(...items);
-
     if (!pag?.pageCount || page >= pag.pageCount) break;
     page++;
   }

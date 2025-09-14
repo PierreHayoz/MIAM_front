@@ -10,6 +10,7 @@ import RichTextServer from "../ui/RichText";
 import DirectoryReveal, { mapStrapi } from "../DirectoryReveal";
 import PartnersStrip from "../partners/Partners";
 import ContactMap from "./ContactMap";
+import Link from "next/link";
 
 // utils
 const todayISO = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -152,29 +153,45 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
           </div>);;
         break;
       }
-
-      case "blocks.membres": {
-        const items = await getMembres({ locale });
-        const heading = b?.title
+      case "blocks.glossaires": {
+        const items = await getGlossaires({ locale });
         out.push(
           <div className="md:grid md:grid-cols-4">
             <div className="col-start-2 col-span-2">
-              <DirectoryReveal items={items} heading={heading} getters={membresGetters} />
+              <DirectoryReveal items={items} heading={b.title} getters={glossaireGetters} />
             </div>
-          </div>);
+          </div>);;
+        break;
+      }
+      case "blocks.button": {
+        out.push(
+          <div className="md:grid md:grid-cols-4">
+            <div className="md:col-start-2 md:col-span-2">
+            <Link
+              href={b.externalURL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-4 py-2 rounded-xs border border-MIAMblack text-MIAMblack w-fit hover:bg-MIAMblack hover:text-white transition-colors"
+            >
+              {b.label || "En savoir plus"}
+            </Link>
+            </div>
+          </div>
+        );
         break;
       }
 
+
       case 'blocks.map': {
-  out.push(
-    <div key={`map-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 py-8">
-      <div className="col-span-4">
-        <ContactMap lat={b.latitude} lng={b.longitude} label={b.label} />
-      </div>
-    </div>
-  );
-  break;
-}
+        out.push(
+          <div key={`map-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 py-8">
+            <div className="col-span-4">
+              <ContactMap lat={b.latitude} lng={b.longitude} label={b.label} />
+            </div>
+          </div>
+        );
+        break;
+      }
 
       case "blocks.paragraphes": {
         out.push(

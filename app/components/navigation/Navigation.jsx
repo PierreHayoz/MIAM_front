@@ -171,7 +171,7 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
   return (
     <nav
       className={[
-        "fixed z-50 bg- top-0 left-0 right-0 md:border-b md:h-auto h-full",
+        "fixed z-50 top-0 left-0 right-0 md:border-b md:h-auto h-full",
         "transition-transform duration-300 will-change-transform",
         hiddenByScroll ? "-translate-y-full" : "translate-y-0",
       ].join(" ")}

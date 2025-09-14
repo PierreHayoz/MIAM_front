@@ -17,8 +17,8 @@ export default function RevealRowClient({
   sideClasses = 'right-0',
   bg = 'bg-black',
   activateOnMobile = true,
-  inViewMargin = '-35% 0px -35% 0px',
-  inViewAmount = 0.3,
+  inViewMargin = '-20% 0px -60% 0px',
+  inViewAmount = 0.6,
   forceMobile = false,
 
   // ✅ NEW: couleur de texte de la ligne (par défaut gris)
