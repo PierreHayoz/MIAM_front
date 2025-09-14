@@ -38,7 +38,7 @@ export default function PartnersStrip({ items = [], className = "" }) {
           return (
             <div key={`partner-${id}`} className="cursor-pointer bg-MIAMlightgrey hover:bg-MIAMgrey rounded-md p-8 h-40 flex items-center justify-center">
               {url && 
-                <a href={url} target="_blank" rel="noopener noreferrer" title={name}>
+                <a href={url} target="_blank" rel="noopener noreferrer" title={name} className="w-full">
                   {Logo}
                 </a>
                }

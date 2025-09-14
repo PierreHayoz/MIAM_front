@@ -3,8 +3,28 @@ import EventsSuggestionsBlock from "@/app/components/cms/EventsSuggestionsBlock"
 import SectionCtaBlock from "@/app/components/cms/SectionCTABlock";
 import PartnersListBlock from "@/app/components/cms/PartnersListBlock";
 import MidParagraph from "@/app/components/paragraphs/MidParagraph";
+import Link from "next/link";
 
 const typeOf = (b) => b?.__component || b?.component || b?.type || "";
+
+function lang(locale) {
+  return (locale || "fr").toLowerCase().split("-")[0];
+}
+
+const PROGRAM_PATH = {
+  fr: "/fr/programme",
+  en: "/en/programming",
+  de: "/de/programmierung",
+};
+
+function discoverProgramLabel(locale) {
+  switch (lang(locale)) {
+    case "fr": return "Découvrir le programme";
+    case "en": return "Discover the programme"; // (UK) ou "program" (US)
+    case "de": return "Programm entdecken";
+    default: return "Discover the program";
+  }
+}
 
 export default async function HomePage({ params: paramsPromise }) {
   // ✅ IMPORTANT: params est une Promesse — on l'attend
@@ -32,6 +52,13 @@ export default async function HomePage({ params: paramsPromise }) {
         <section className="mt-12 px-4">
           {sug.title && <h2 className="text-xl mb-4">{sug.title}</h2>}
           <EventsSuggestionsBlock items={items} locale={locale} />
+
+          <Link
+            href={PROGRAM_PATH[lang(locale)] ?? "/en/program"}
+            className="inline-block mt-4 px-4 py-2 rounded-xs border border-MIAMblack text-MIAMblack hover:bg-MIAMblack hover:text-white transition-colors"
+          >
+            {discoverProgramLabel(locale)}
+          </Link>
         </section>
       )}
 
