@@ -32,13 +32,13 @@ export default function PartnersStrip({ items = [], className = "" }) {
               alt={name}
               width={80}
               height={80}
-              className="object-contain w-full opacity-90 h-full hover:opacity-100 transition py-8"
+              className="object-contain w-full opacity-90 h-full hover:opacity-100 transition "
             />
           
           return (
             <div key={`partner-${id}`} className="cursor-pointer bg-MIAMlightgrey hover:bg-MIAMgrey rounded-md p-8 h-40 flex items-center justify-center">
               {url && 
-                <a href={url} target="_blank" rel="noopener noreferrer" title={name} className="w-full">
+                <a href={url} target="_blank" rel="noopener noreferrer" title={name} className="w-full py-8">
                   {Logo}
                 </a>
                }
