@@ -73,7 +73,7 @@ export default function DirectoryReveal({
                 getThumbnail={(e) => getThumbnail(e)} // pas utilisé si renderReveal est fourni
                 getDescription={(e) => getDescription(e)}
                 renderReveal={renderReveal}  // popover détaillé
-                containerClassName="px-4 mt-4"
+                containerClassName="px-4 md:px-0 mt-4"
                 rowClassName="border-b border-MIAMgreytext py-2 group relative"
                 titleClassName="cursor-pointer group-hover:translate-x-8 duration-500"
                 arrow={true}
