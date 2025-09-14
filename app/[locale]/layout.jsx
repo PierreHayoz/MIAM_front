@@ -24,7 +24,7 @@ export default async function LocaleLayout({ children, params }) {
       <NavDataProvider value={{ nav, locale }}>
         <div className="pt-40">{children}</div>
       </NavDataProvider>
-      <Footer />
+      <Footer locale={locale}/>
     </SmoothScrolling>
   );
 }
