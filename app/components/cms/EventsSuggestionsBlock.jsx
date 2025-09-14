@@ -3,16 +3,17 @@ import Card from "@/app/components/cards/Card";
 import { getUpcomingEvents } from "@/app/lib/strapi";
 import RichTextServer from "@/app/components/ui/RichText";
 
-
 export default async function EventsSuggestionsBlock({
-  items,                 // <- optionnel : si fourni, pas de fetch
-  block = {},            // { intro|text, limit, ... } depuis Strapi
+  items,
+  block = {},
   locale = "fr",
-  current,               // { documentId, slug, categories? } (l'event courant)
+  current,
 }) {
   const intro = block?.intro || block?.text || null;
   const limitFromBlock = Number(block?.limit);
-  const limit = Number.isFinite(limitFromBlock) ? limitFromBlock : (Array.isArray(items) ? items.length : 3);
+  const limit = Number.isFinite(limitFromBlock)
+    ? limitFromBlock
+    : (Array.isArray(items) ? items.length : 3);
 
   const excludeDocumentId = current?.documentId ?? undefined;
   const excludeSlug = current?.slug ?? undefined;
@@ -20,9 +21,8 @@ export default async function EventsSuggestionsBlock({
 
   let list = Array.isArray(items) ? items : null;
 
-  // Fetch uniquement si pas d'items fournis
   if (!list) {
-    const overfetch = Math.max(limit, 1) + 5; // marge
+    const overfetch = Math.max(limit, 1) + 5;
     const suggestions = await getUpcomingEvents({
       locale,
       limit: overfetch,
@@ -33,7 +33,6 @@ export default async function EventsSuggestionsBlock({
     list = suggestions || [];
   }
 
-  // Ceinture + bretelles : filtre final déterministe
   const filtered = list
     .filter(
       (s) =>
@@ -46,7 +45,7 @@ export default async function EventsSuggestionsBlock({
   if (!filtered.length) return null;
 
   return (
-    <section className="">
+    <section>
       {intro ? (
         <div className="prose prose-sm text-MIAMgreytext mb-4">
           {typeof intro === "string" ? (
@@ -57,24 +56,26 @@ export default async function EventsSuggestionsBlock({
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Masonry comme CardsList */}
+      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-0">
         {filtered.map((s, i) => (
-          <Card
-            key={`${s.documentId || s.id}-${s.slug}`} // clé stable
-            index={i}
-            locale={locale}
-            slug={s.slug}
-            title={s.title}
-            thumbnail={s.thumbnail}
-            startDate={s.startDate}
-            endDate={s.endDate}
-            startTime={s.startTime}
-            endTime={s.endTime}
-            description={s.description}
-            descriptionBlocks={s.descriptionBlocks}
-            contentBlocks={s.contentBlocks}
-            categories={Array.isArray(s.categories) ? s.categories : []}
-          />
+          <div key={`${s.documentId || s.id}-${s.slug}`} className="break-inside-avoid mb-4">
+            <Card
+              index={i}
+              locale={locale}
+              slug={s.slug}
+              title={s.title}
+              thumbnail={s.thumbnail}
+              startDate={s.startDate}
+              endDate={s.endDate}
+              startTime={s.startTime}
+              endTime={s.endTime}
+              description={s.description}
+              descriptionBlocks={s.descriptionBlocks}
+              contentBlocks={s.contentBlocks}
+              categories={Array.isArray(s.categories) ? s.categories : []}
+            />
+          </div>
         ))}
       </div>
     </section>
