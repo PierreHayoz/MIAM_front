@@ -143,12 +143,12 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
         );
         break;
       }
-      case "blocks.glossaires": {
-        const items = await getGlossaires({ locale });
+      case "blocks.membres": {
+        const items = await getMembres({ locale });
         out.push(
           <div className="md:grid md:grid-cols-4">
             <div className="col-start-2 col-span-2">
-              <DirectoryReveal items={items} heading={b.title} getters={glossaireGetters} />
+              <DirectoryReveal items={items} heading={b.title} getters={membresGetters} />
             </div>
           </div>);;
         break;
