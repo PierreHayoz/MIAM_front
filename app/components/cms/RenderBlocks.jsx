@@ -167,7 +167,7 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
 
       case 'blocks.map': {
   out.push(
-    <div key={`map-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 px-4 py-8">
+    <div key={`map-${b.id ?? `idx-${idx}`}`} className="grid grid-cols-4 py-8">
       <div className="col-span-4">
         <ContactMap lat={b.latitude} lng={b.longitude} label={b.label} />
       </div>
