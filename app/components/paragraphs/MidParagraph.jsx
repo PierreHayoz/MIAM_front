@@ -2,7 +2,7 @@ import React from 'react';
 
 const MidParagraph = ({ text }) => {
     return (
-        <h2 className='text-2xl leading-6 col-span-2 col-start-2 py-24'>{text}</h2>
+        <h2 className='text-xl md:text-2xl leading-6 col-span-2 col-start-2 py-24 md:px-0 px-4'>{text}</h2>
     );
 }
 
