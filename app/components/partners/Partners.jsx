@@ -17,7 +17,7 @@ export default function PartnersStrip({ items = [], className = "" }) {
   if (!list.length) return null;
 
   return (
-    <section className={["", className].join(" ")}>
+    <section className={["pb-4", className].join(" ") }>
 
       <div className="md:grid-cols-2 grid-cols-1 lg:grid-cols-3 grid gap-4">
         {list.map((entry) => {
