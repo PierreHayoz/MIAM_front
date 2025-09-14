@@ -57,7 +57,7 @@ export default async function EventsSuggestionsBlock({
       ) : null}
 
       {/* Masonry comme CardsList */}
-      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-0">
+      <div className="columns-1 sm:columns-2 lg:columns-3  gap-0">
         {filtered.map((s, i) => (
           <div key={`${s.documentId || s.id}-${s.slug}`} className="break-inside-avoid mb-4">
             <Card
