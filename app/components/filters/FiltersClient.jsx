@@ -1,10 +1,61 @@
 'use client'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams, useParams } from 'next/navigation'
 import { Search, X } from 'lucide-react'
 
-export default function FiltersClient({ allCats = [] }) {
+// ---- i18n ultra-light
+const UI = {
+  fr: {
+    searchPh: 'Rechercher…',
+    searchAria: 'Rechercher',
+    clearAria: 'Effacer la recherche',
+    clearTitle: 'Effacer',
+    when: 'Quand ?',
+    allDates: 'Toutes les dates',
+    thisWeek: 'Cette semaine',
+    thisMonth: 'Ce mois-ci',
+    thisYear: 'Cette année',
+    what: 'Quoi ?',
+    reset: 'Réinitialiser les filtres',
+    updating: 'Mise à jour…',
+  },
+  en: {
+    searchPh: 'Search…',
+    searchAria: 'Search',
+    clearAria: 'Clear search',
+    clearTitle: 'Clear',
+    when: 'When?',
+    allDates: 'All dates',
+    thisWeek: 'This week',
+    thisMonth: 'This month',
+    thisYear: 'This year',
+    what: 'What?',
+    reset: 'Reset filters',
+    updating: 'Updating…',
+  },
+  de: {
+    searchPh: 'Suchen…',
+    searchAria: 'Suchen',
+    clearAria: 'Suche löschen',
+    clearTitle: 'Löschen',
+    when: 'Wann?',
+    allDates: 'Alle Termine',
+    thisWeek: 'Diese Woche',
+    thisMonth: 'Diesen Monat',
+    thisYear: 'Dieses Jahr',
+    what: 'Was?',
+    reset: 'Filter zurücksetzen',
+    updating: 'Aktualisiere…',
+  },
+}
+const baseLang = (l) => String(l || 'fr').toLowerCase().split('-')[0]
+const t = (l, k) => UI[baseLang(l)]?.[k] ?? UI.en[k] ?? k
+
+export default function FiltersClient({ allCats = [], locale: explicitLocale }) {
+  const params = useParams()
+  const locale = explicitLocale || params?.locale || 'fr'
+
   const router = useRouter()
   const pathname = usePathname()
   const sp = useSearchParams()
@@ -19,7 +70,6 @@ export default function FiltersClient({ allCats = [] }) {
   function commit(params, { replace = false } = {}) {
     const url = params.toString() ? `${pathname}?${params.toString()}` : pathname
     startTransition(() => {
-      // rem: push = garde l'historique, replace = ne pollue pas l'historique
       (replace ? router.replace : router.push)(url, { scroll: false })
     })
   }
@@ -30,14 +80,14 @@ export default function FiltersClient({ allCats = [] }) {
     commit(params, opts)
   }
 
-  // recherche: debounce (évite 1 nav par frappes)
+  // recherche: debounce (évite 1 nav par frappe)
   useEffect(() => {
     const id = setTimeout(() => {
       update((p) => {
         const v = q.trim()
         if (v) p.set('q', v)
         else p.delete('q')
-      }, { replace: true }) // replace pour ne pas spammer l'historique
+      }, { replace: true })
     }, 300)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,7 +97,7 @@ export default function FiltersClient({ allCats = [] }) {
     update((p) => {
       if (!k) p.delete('t')
       else p.set('t', k)
-    }, { /* push par défaut => clic = historique navigable */ })
+    })
   }
 
   const toggleCat = (cat) => {
@@ -61,9 +111,7 @@ export default function FiltersClient({ allCats = [] }) {
   }
 
   const reset = () => {
-    update((p) => {
-      p.delete('q'); p.delete('t'); p.delete('cat')
-    }, { replace: false })
+    update((p) => { p.delete('q'); p.delete('t'); p.delete('cat') }, { replace: false })
     setQ('')
   }
 
@@ -75,19 +123,19 @@ export default function FiltersClient({ allCats = [] }) {
         <input
           type="search"
           className="pl-1 w-full bg-transparent outline-none text-sm"
-          placeholder="Rechercher… "
+          placeholder={t(locale, 'searchPh')}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Escape') setQ('') }}
-          aria-label="Rechercher"
+          aria-label={t(locale, 'searchAria')}
         />
         {q && (
           <button
             type="button"
             onClick={() => setQ('')}
             className="bg-MIAMblack text-MIAMwhite hover:bg-MIAMgrey rounded-full p-1"
-            aria-label="Effacer la recherche"
-            title="Effacer"
+            aria-label={t(locale, 'clearAria')}
+            title={t(locale, 'clearTitle')}
           >
             <X size={16} />
           </button>
@@ -95,22 +143,24 @@ export default function FiltersClient({ allCats = [] }) {
       </div>
 
       {/* Quand ? */}
-      <div className=''>
-        <h2 className="text-xl">Quand ?</h2>
+      <div>
+        <h2 className="text-xl">{t(locale, 'when')}</h2>
         <div className="flex flex-wrap gap-2 pt-2 ">
           {[
-            { k: '', label: 'Toutes les dates' },
-            { k: 'week', label: 'Cette semaine' },
-            { k: 'month', label: 'Ce mois-ci' },
-            { k: 'year', label: 'Cette année' },
+            { k: '',      label: t(locale, 'allDates') },
+            { k: 'week',  label: t(locale, 'thisWeek') },
+            { k: 'month', label: t(locale, 'thisMonth') },
+            { k: 'year',  label: t(locale, 'thisYear') },
           ].map(opt => (
             <button
               key={opt.k || 'all'}
               type="button"
               onClick={() => setTime(opt.k)}
               className={
-                'px-3 py-1 rounded-full   text-sm ' +
-                ((time === (opt.k || '')) ? 'bg-MIAMblack  text-white cursor-pointer' : 'bg-MIAMlightgrey hover:bg-MIAMgrey duration-500 text-MIAMblack hover:text-black cursor-pointer')
+                'px-3 py-1 rounded-full text-sm ' +
+                ((time === (opt.k || ''))
+                  ? 'bg-MIAMblack text-white cursor-pointer'
+                  : 'bg-MIAMlightgrey hover:bg-MIAMgrey duration-500 text-MIAMblack hover:text-black cursor-pointer')
               }
               aria-pressed={time === (opt.k || '')}
             >
@@ -121,20 +171,21 @@ export default function FiltersClient({ allCats = [] }) {
       </div>
 
       {/* Quoi ? */}
-      <div className=''>
-        <h2 className="text-xl">Quoi ?</h2>
+      <div>
+        <h2 className="text-xl">{t(locale, 'what')}</h2>
         <ul className="flex flex-wrap gap-2 pt-2">
           {allCats.map((cat) => {
             const active = activeCats.has(cat)
             return (
-              <li key={cat} className='cursor-pointer'>
+              <li key={cat} className="cursor-pointer">
                 <button
                   type="button"
                   onClick={() => toggleCat(cat)}
                   className={
                     'px-3 py-1 rounded-full text-sm ' +
-                    (active ? 'bg-MIAMblack text-white cursor-pointer'
-                            : 'bg-MIAMlightgrey  text-MIAMblack hover:text-black cursor-pointer' )
+                    (active
+                      ? 'bg-MIAMblack text-white cursor-pointer'
+                      : 'bg-MIAMlightgrey text-MIAMblack hover:text-black cursor-pointer')
                   }
                   aria-pressed={active}
                 >
@@ -149,11 +200,11 @@ export default function FiltersClient({ allCats = [] }) {
       {/* Reset */}
       <div>
         <button onClick={reset} type="button" className="text-sm underline text-MIAMgrey hover:text-black">
-          Réinitialiser les filtres
+          {t(locale, 'reset')}
         </button>
       </div>
 
-      {isPending && <div className="text-xs text-MIAMgrey">Mise à jour…</div>}
+      {isPending && <div className="text-xs text-MIAMgrey">{t(locale, 'updating')}</div>}
     </div>
   )
 }

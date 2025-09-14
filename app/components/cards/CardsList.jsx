@@ -102,7 +102,7 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
     <div className="grid grid-cols-4 w-full">
       <aside className="col-span-4 md:col-span-1 md:sticky md:top-0">
         <div className="md:sticky md:top-24">
-          {showFilters ? <FiltersClient allCats={allCats} /> : null}
+          {showFilters ? <FiltersClient locale={locale} allCats={allCats} /> : null}
         </div>
       </aside>
 
