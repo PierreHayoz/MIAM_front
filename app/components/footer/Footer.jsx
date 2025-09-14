@@ -64,7 +64,7 @@ export default async function Footer({ locale }) {
   };
 
   return (
-    <div className="pt-40 w-full md:grid grid-cols-4 p-4 flex flex-col md:gap-0 gap-4">
+    <div className="pt-40 w-full md:grid grid-cols-4 px-4 flex flex-col md:gap-0 gap-4">
       <div className="col-span-4 md:col-span-1">
         <Newsletter locale={locale} />
       </div>
@@ -126,7 +126,7 @@ export default async function Footer({ locale }) {
       {/* Bloc Impressum cliquable et localisé */}
       <Link
         href={t(locale, "link")}
-        className="col-span-4 impressum block hover:underline text-center"
+        className="col-span-4 impressum block hover:underline text-end py-2"
       >
         {t(locale, "legal")}
       </Link>
