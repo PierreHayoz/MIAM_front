@@ -20,7 +20,7 @@ const PROGRAM_PATH = {
 function discoverProgramLabel(locale) {
   switch (lang(locale)) {
     case "fr": return "Découvrir le programme";
-    case "en": return "Discover the programme"; // (UK) ou "program" (US)
+    case "en": return "Discover the program"; // (UK) ou "program" (US)
     case "de": return "Programm entdecken";
     default: return "Discover the program";
   }
