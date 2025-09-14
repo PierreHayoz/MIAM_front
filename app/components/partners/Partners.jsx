@@ -32,7 +32,7 @@ export default function PartnersStrip({ items = [], className = "" }) {
               alt={name}
               width={80}
               height={80}
-              className="object-contain w-full opacity-90 h-full hover:opacity-100 transition"
+              className="object-contain w-full opacity-90 h-full hover:opacity-100 transition py-8"
             />
           
           return (
