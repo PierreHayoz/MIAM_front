@@ -23,7 +23,7 @@ export default function GalleryMedia({ items = [] }) {
                 <>
                   <Image
                     src={src}
-                    alt={m.media.alt}
+                    alt={alt}
                     width={1200}
                     height={800}
                     className="mix-blend-darken w-full h-auto"
