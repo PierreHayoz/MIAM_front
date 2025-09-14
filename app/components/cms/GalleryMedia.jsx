@@ -23,12 +23,12 @@ export default function GalleryMedia({ items = [] }) {
                 <>
                   <Image
                     src={src}
-                    alt={alt}
+                    alt={m.media.alt}
                     width={1200}
                     height={800}
                     className="mix-blend-darken w-full h-auto"
                   />
-                  <div className="text-xs w-full text-center">{alt || m.media.caption}</div>
+                  {m.media.caption && <div className="text-xs w-full text-center">{m.media.caption}</div>}
                 </>
               )}
             </div>
