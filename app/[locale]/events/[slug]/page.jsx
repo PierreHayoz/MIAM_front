@@ -18,7 +18,7 @@ function doorOpeningLabel(locale) {
     case "fr": return "Ouverture des portes";
     case "en": return "Doors opening";
     case "de": return "Türöffnung";
-    default:   return "Doors opening"; // fallback
+    default: return "Doors opening"; // fallback
   }
 }
 function formatTimeRange(e) {
@@ -44,9 +44,10 @@ function formatDoorOpeningDisplay(door, locale) {
 }
 
 
-export default async function EventPage({ params, searchParams }) {
-  const { locale, slug } = await params;
-  const sp = await searchParams;
+export default async function EventPage(props) {
+  const { params, searchParams } = props
+  const { locale, slug } = await params           // ✅ on attend params
+  const sp = await searchParams      
   const onParam = Array.isArray(sp?.on) ? sp.on[0] : sp?.on;
 
   const e = await getEventBySlug(slug, { locale });
@@ -161,10 +162,10 @@ export default async function EventPage({ params, searchParams }) {
             </div>
           )}
           {doorOpeningDisplay && (
-  <p className="bg-black rounded-full text-white px-2 w-fit mt-4">
-    {doorOpeningLabel(locale)}&nbsp;: {doorOpeningDisplay}
-  </p>
-)}
+            <p className="bg-black rounded-full text-white px-2 w-fit mt-4">
+              {doorOpeningLabel(locale)}&nbsp;: {doorOpeningDisplay}
+            </p>
+          )}
 
           {e.ticketUrl && !e.isFree && (
             <div className="pt-2 items-center gap-2">
