@@ -126,7 +126,7 @@ export default async function Footer({ locale }) {
       {/* Bloc Impressum cliquable et localisé */}
       <Link
         href={t(locale, "link")}
-        className="col-span-4 impressum bg-red-300 block hover:underline"
+        className="col-span-4 impressum block hover:underline text-center"
       >
         {t(locale, "legal")}
       </Link>
