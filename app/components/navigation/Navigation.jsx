@@ -170,13 +170,15 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
 
   return (
     <nav
-      className={[
-        "fixed z-50 top-0 left-0 right-0 md:border-b md:h-auto h-full",
-        "transition-transform duration-300 will-change-transform",
-        hiddenByScroll ? "-translate-y-full" : "translate-y-0",
-      ].join(" ")}
-    >
-      <div className="bg-white mx-auto flex items-center h-20 justify-between p-4">
+  className={[
+    "fixed z-50 top-0 left-0 right-0 md:border-b",
+    "transition-transform duration-300",
+    hiddenByScroll ? "-translate-y-full" : "translate-y-0",
+    menuOpen ? "h-full" : "h-auto",          // 👈 ici le changement clé
+  ].join(" ")}
+>
+
+      <div className=" mx-auto flex items-center h-20 justify-between p-4">
         <div className="hidden md:flex items-center justify-between w-full">
           <Link href={homeHref} className="inline-flex items-center">
             <Image src="/logo/MIAM.svg" width={100} height={80} alt="MIAM" className="w-32" />
@@ -212,7 +214,7 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
       </div>
 
       {menuOpen && (
-        <div className="md:hidden" id="mobile-drawer">
+        <div className="md:hidden " id="mobile-drawer">
           <button
             aria-label="Fermer le menu"
             className="fixed inset-0 bg-black/40"

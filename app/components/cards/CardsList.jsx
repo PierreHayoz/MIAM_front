@@ -76,7 +76,6 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
   const rawCats = searchParams?.cat ?? [];
   const cats = Array.isArray(rawCats) ? rawCats : [rawCats].filter(Boolean);
   const [rs, re] = range(searchParams?.t);
-      console.log(filtered)
 
   // catégories (à partir des events, pas des instances, pour éviter les doublons visuels)
   const allCats = Array.from(new Set(events.flatMap(e => e.categories ?? [])))
