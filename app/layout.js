@@ -7,7 +7,7 @@ export const metadata = {
     default: "MIAM",
     template: "%s | MIAM - Machine interactive et artistique en mouvemement",
   },
-  description: "Description de mon site",
+  description: "L’association MIAM (Machine Immersive et Artistique en Mouvement) a pour mission de promouvoir la création et la diffusion de musiques immersives, de soutenir les technologies médiatiques innovantes et d’accompagner les artistes désireux d’inspirer un public diversifié.",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon-32x32.png",
