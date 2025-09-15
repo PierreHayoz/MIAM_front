@@ -76,6 +76,7 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
   const rawCats = searchParams?.cat ?? [];
   const cats = Array.isArray(rawCats) ? rawCats : [rawCats].filter(Boolean);
   const [rs, re] = range(searchParams?.t);
+      console.log(filtered)
 
   // catégories (à partir des events, pas des instances, pour éviter les doublons visuels)
   const allCats = Array.from(new Set(events.flatMap(e => e.categories ?? [])))
@@ -107,7 +108,6 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
       </aside>
 
       <main className="col-span-4 md:col-span-3 md:px-4">
-    
 
         {filtered.length === 0 ? (
           <div className="text-MIAMgrey py-16 text-center">
