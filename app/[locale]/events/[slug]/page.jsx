@@ -84,10 +84,10 @@ function timeDisplay(value, locale) {
 function concertStartLabel(locale) {
   const lang = (locale || "fr").toLowerCase().split("-")[0];
   switch (lang) {
-    case "fr": return "Début du concert";
-    case "en": return "Concert start";
-    case "de": return "Konzertbeginn";
-    default:   return "Concert start";
+    case "fr": return "Début à";
+    case "en": return "Start at";
+    case "de": return "beginnt bei";
+    default:   return "start at";
   }
 }
 
