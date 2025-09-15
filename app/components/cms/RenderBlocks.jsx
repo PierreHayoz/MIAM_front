@@ -4,7 +4,9 @@ import CardsListServer from "../cards/CardsList";
 import GalleryMedia from "./GalleryMedia";
 import BannerImage from "./BannerImage";
 import {
-  getEvents, getGlossaires, getMembres
+  getCommission,
+  getEvents, getGlossaires, getMembres,
+  getNomade
 } from "@/app/lib/strapi";
 import RichTextServer from "../ui/RichText";
 import DirectoryReveal, { mapStrapi } from "../DirectoryReveal";
@@ -36,7 +38,44 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
       );
     },
   };
-
+const nomadeGetters = {
+  getKey: (e) => e?.id ?? e?.documentId,
+  getName: (e) => {
+    const a = mapStrapi.getAttrs(e);
+    return a?.nom ?? a?.name ?? a?.title ?? "—";
+  },
+  getInline: (e) => {
+    const a = mapStrapi.getAttrs(e);
+    return a?.position ?? a?.role ?? a?.fonction ?? "";
+  },
+  getDescription: (e) => {
+    const a = mapStrapi.getAttrs(e);
+    return a?.presentation ?? a?.description ?? "";
+  },
+  getThumbnail: (e) => {
+    const a = mapStrapi.getAttrs(e);
+    return mapStrapi.getMediaUrl(a?.photo ?? a?.image);
+  },
+};
+const commissionGetters = {
+  getKey: (e) => e?.id ?? e?.documentId,
+  getName: (e) => {
+    const a = mapStrapi.getAttrs(e);
+    return a?.nom ?? a?.name ?? a?.title ?? "—";
+  },
+  getInline: (e) => {
+    const a = mapStrapi.getAttrs(e);
+    return a?.position ?? a?.role ?? a?.fonction ?? "";
+  },
+  getDescription: (e) => {
+    const a = mapStrapi.getAttrs(e);
+    return a?.presentation ?? a?.description ?? "";
+  },
+  getThumbnail: (e) => {
+    const a = mapStrapi.getAttrs(e);
+    return mapStrapi.getMediaUrl(a?.photo ?? a?.image);
+  },
+};
   const membresGetters = {
     getKey: (e) => e?.id ?? e?.documentId,
     getName: (e) => {
@@ -151,6 +190,29 @@ export default async function RenderBlocks({ blocks = [], locale, searchParams }
               <DirectoryReveal items={items} heading={b.title} getters={membresGetters} />
             </div>
           </div>);;
+        break;
+      }
+
+      case "blocks.nomade": {
+        const items = await getNomade({ locale });
+        console.log(items,'léeoooool')
+        out.push(
+          <div className="md:grid md:grid-cols-4">
+            <div className="col-start-2 col-span-2">
+              <DirectoryReveal items={items} heading={b.title} getters={nomadeGetters} />
+            </div>
+          </div>);
+        break;
+      }
+      case "blocks.commission": {
+        const items = await getCommission({ locale });
+        console.log("HELLLLLL")
+        out.push(
+          <div className="md:grid md:grid-cols-4">
+            <div className="col-start-2 col-span-2">
+              <DirectoryReveal items={items} heading={b.title} getters={commissionGetters} />
+            </div>
+          </div>);
         break;
       }
       case "blocks.glossaires": {

@@ -92,6 +92,34 @@ export async function getMembres({
   const data = await doFetch(`/api/membres`, { params, next });
   return (data?.data ?? []).map(normalizeEntry);
 }
+export async function getNomade({
+  locale = "fr",
+  pageSize = 200,
+  next = { revalidate: 0 },
+} = {}) {
+  const params = {
+    ...(locale ? { locale } : {}),
+    "pagination[pageSize]": String(pageSize),
+    "populate[photo]": "true",
+  };
+  const data = await doFetch(`/api/miam-nomades`, { params, next });
+  console.log(data)
+  return (data?.data ?? []).map(normalizeEntry);
+}
+
+export async function getCommission({
+  locale = "fr",
+  pageSize = 200,
+  next = { revalidate: 0 },
+} = {}) {
+  const params = {
+    ...(locale ? { locale } : {}),
+    "pagination[pageSize]": String(pageSize),
+    "populate[photo]": "true",
+  };
+  const data = await doFetch(`/api/commission-strategiques`, { params, next });
+  return (data?.data ?? []).map(normalizeEntry);
+}
 
 // app/lib/strapi.js
 export async function getPageBySlug(slug, { locale = "fr", preview = false } = {}) {
@@ -104,7 +132,10 @@ export async function getPageBySlug(slug, { locale = "fr", preview = false } = {
     "populate[blocks][populate]": "*",
     "populate[blocks][on][blocks.events-list][populate]": "true",
     "populate[blocks][on][blocks.paragraphes][populate]": "*",
+    "populate[blocks][on][blocks.commission][populate]": "true",
+
     "populate[blocks][on][blocks.membres][populate]": "true",
+    "populate[blocks][on][blocks.nomade][populate]": "true",
     "populate[blocks][on][blocks.glossaires][populate]": "true",
     "populate[blocks][on][blocks.banner][populate]": "*",
     "populate[blocks][on][blocks.button][populate]": "*",
