@@ -4,8 +4,6 @@ import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
 import { useMemo } from 'react';
 import L from 'leaflet';
 
-// ✨ Boutons custom (overlay)
-
 
 function makeLogoDivIcon({
   src = '/logo.svg',
@@ -107,7 +105,7 @@ export default function LeafletMap({
   const _maxZoom = lockZoom ? zoom : (maxZoom ?? 19);
 
   return (
-    <div className="relative py-8 overflow-hidden" style={{ height }}>
+    <div className="relative py-8 overflow-hidden z-0" style={{ height }}>
       <MapContainer
         key={`${lat},${lng},${zoom},${_minZoom},${_maxZoom},${canZoom},${scrollWheelZoom}`}
         center={center}

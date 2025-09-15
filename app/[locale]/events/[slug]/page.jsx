@@ -42,6 +42,8 @@ function doorOpeningLabel(locale) {
     default: return "Doors opening"; // fallback
   }
 }
+
+
 function formatTimeRange(e) {
   const { startTime, endTime } = e || {};
   if (!startTime && !endTime) return null;
@@ -64,7 +66,38 @@ function formatDoorOpeningDisplay(door, locale) {
   return null;
 }
 
+function timeDisplay(value, locale) {
+  if (!value) return null;
+  // cas "HH:mm" déjà prêt
+  if (typeof value === "string" && /^\d{1,2}:\d{2}$/.test(value)) return value;
+  // cas ISO → formate en HH:mm Europe/Zurich
+  try {
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) {
+      const loc = (locale || "fr").toLowerCase().split("-")[0] === "fr" ? "fr-CH" : locale;
+      return d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Zurich" });
+    }
+  } catch {}
+  return null;
+}
 
+function concertStartLabel(locale) {
+  const lang = (locale || "fr").toLowerCase().split("-")[0];
+  switch (lang) {
+    case "fr": return "Début du concert";
+    case "en": return "Concert start";
+    case "de": return "Konzertbeginn";
+    default:   return "Concert start";
+  }
+}
+
+// Range = doorOpening → endTime
+function formatDoorToEndRange(e, locale) {
+  const door = formatDoorOpeningDisplay(e?.doorOpening, locale);
+  const end  = timeDisplay(e?.endTime, locale);
+  if (door && end) return `${door} – ${end}`;
+  return door || end || null;
+}
 export default async function EventPage(props) {
   const { params, searchParams } = props
   const { locale, slug } = await params           // ✅ on attend params
@@ -113,8 +146,8 @@ export default async function EventPage(props) {
     )
     .slice(0, limit);
 
-  const selectedDate =
-    +    typeof onParam === "string" ? onParam.slice(0, 10) : null;
+  const selectedDate = typeof onParam === "string" ? onParam.slice(0, 10) : null;
+
 
   // occurrence correspondante
   const occ = selectedDate
@@ -130,22 +163,27 @@ export default async function EventPage(props) {
     endTime: occ.endTime ?? e.endTime ?? null,
   } : e;
 
-  const timeRange = formatTimeRange(evView);
+const timeRange = formatDoorToEndRange(evView, locale);
   const doorOpeningDisplay = formatDoorOpeningDisplay(e.doorOpening, locale);
+  const concertStartTime = timeDisplay(evView.startTime, locale);
+
   return (
     <article className="px-4">
       <div className="grid grid-cols-4 gap-2">
         <header className="col-span-4 md:col-span-2 ">
           <h1 className="text-3xl">{e.title}</h1>
           <p className="text-MIAMviolet bg-grey text-lg">
-            {formatEventDateRange(evView)}
-            {timeRange ? ` · ${timeRange}` : ""}
-          </p>
+  {formatEventDateRange(evView)}
+  {timeRange ? ` · ${timeRange}` : ""}
+</p>
 
 
+          {concertStartTime && (
+  <p className="bg-black rounded-full text-white px-2 w-fit my-2">
+    {concertStartLabel(locale)}&nbsp;: {concertStartTime}
+  </p>
+)}
 
-
-          {/* 🔸 Alerte / warning */}
 
           <div className="py-2">
             {Array.isArray(e.categories) && e.categories.length > 0 && (
@@ -153,13 +191,11 @@ export default async function EventPage(props) {
             )}
           </div>
 
-
           {Array.isArray(e.descriptionBlocks) && e.descriptionBlocks.length > 0 ? (
             <RichText value={e.descriptionBlocks} />
           ) : (
             e.description && <p className="text-lg whitespace-pre-line">{e.description}</p>
           )}
-
 
           {Array.isArray(e.content) && e.content.length > 0 ? (
             <div>
@@ -182,35 +218,30 @@ export default async function EventPage(props) {
               {e.moreInfos}
             </div>
           )}
-          {doorOpeningDisplay && (
-            <p className="bg-black rounded-full text-white px-2 w-fit mt-4">
-              {doorOpeningLabel(locale)}&nbsp;: {doorOpeningDisplay}
-            </p>
+
+          {e.ticketUrl && !e.isFree && (
+            <div className="pt-2 items-center gap-2">
+              {(e.isFree || (Array.isArray(e.prices) && e.prices.length) || e.price) && (
+                <div className="mt-2 mb-4">
+                  <PriceList
+                    prices={e.prices}
+                    isFree={e.isFree}
+                    locale={locale === "fr" ? "fr-CH" : locale}
+                    defaultCurrency="CHF"
+                  />
+                </div>
+              )}
+
+              <Link
+                href={e.ticketUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-4 py-2 rounded-xs border border-MIAMblack text-MIAMblack hover:bg-MIAMblack hover:text-white transition-colors"
+              >
+                {ctaLabel(locale, e.isReservation)}
+              </Link>
+            </div>
           )}
-
-         {e.ticketUrl && !e.isFree && (
-  <div className="pt-2 items-center gap-2">
-    {(e.isFree || (Array.isArray(e.prices) && e.prices.length) || e.price) && (
-      <div className="mt-2 mb-4">
-        <PriceList
-          prices={e.prices}
-          isFree={e.isFree}
-          locale={locale === "fr" ? "fr-CH" : locale}
-          defaultCurrency="CHF"
-        />
-      </div>
-    )}
-
-    <Link
-      href={e.ticketUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block px-4 py-2 rounded-xs border border-MIAMblack text-MIAMblack hover:bg-MIAMblack hover:text-white transition-colors"
-    >
-      {ctaLabel(locale, e.isReservation)}
-    </Link>
-  </div>
-)}
 
         </header>
 

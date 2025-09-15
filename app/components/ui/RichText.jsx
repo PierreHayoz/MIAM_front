@@ -125,64 +125,87 @@ export default function RichTextServer({
       }
 
       case "list": {
-        const isOrdered = node.format === "ordered";
+  const isOrdered = node.format === "ordered";
 
-        if (isOrdered) {
-          const items = (node.children ?? []).map((li, i) => (
-            <li key={`${idx}-oli${i}`} className={cx(" mb-1", colors.list)}>
-              {renderChildren(li.children, `${idx}-oli${i}`)}
-            </li>
-          ));
-          return (
-            <ol
-              key={idx}
-              className={cx(
-                "list-decimal list-outside ml-5 leading-tight mb-2 space-y-1",
-                colors.list
-              )}
-            >
-              {items}
-            </ol>
-          );
-        }
+  if (isOrdered) {
+    const items = (node.children ?? []).map((li, i) => (
+      <li key={`${idx}-oli${i}`} className={cx("mb-1", colors.list)}>
+        {renderChildren(li.children, `${idx}-oli${i}`)}
+      </li>
+    ));
+    return (
+      <ol
+        key={idx}
+        className={cx(
+          "list-decimal list-outside ml-5 leading-tight mb-2 space-y-1",
+          colors.list
+        )}
+      >
+        {items}
+      </ol>
+    );
+  }
 
-        const items = (node.children ?? []).map((li, i) => (
-          <li
-            key={`${idx}-uli${i}`}
-            className={cx(
-              " mb-1 pl-4 marker:content-['→'] marker:font-semibold",
-              colors.list,
-              colors.marker
-            )}
-          >
-            {renderChildren(li.children, `${idx}-uli${i}`)}
-          </li>
-        ));
-        return (
-          <ul
-            key={idx}
-            className={cx("list-outside ml-5 leading-tight mb-2 space-y-1", colors.list)}
-          >
-            {items}
-          </ul>
-        );
-      }
+  // ✅ Unordered list: flèches via ::before (compatible mobile)
+  // UL non ordonnée
+const items = (node.children ?? []).map((li, i) => (
+  <li
+    key={`${idx}-uli${i}`}
+    className={cx(
+      "mb-1 list-none pl-0 flex items-center gap-2 leading-tight",
+      colors.list
+    )}
+  >
+    <span
+      aria-hidden
+      className={cx("shrink-0", colors.marker)} // ajuste la micro-hausse ici
+    >
+      →
+    </span>
+    <div className="min-w-0">
+      {renderChildren(li.children, `${idx}-uli${i}`)}
+    </div>
+  </li>
+));
 
-      case "list-item":
-        return (
-          <li
-            key={idx}
-            className={cx(
-              "relative mb-1 flex items-center",
-              colors.list,
-              colors.before,
-              "before:content-['→'] before:absolute before:left-0 before:top-[0.35em] before:font-semibold"
-            )}
-          >
-            {renderChildren(node.children, idx)}
-          </li>
-        );
+return (
+  <ul key={idx} className={cx("ml-5 mb-2 space-y-1", colors.list)}>
+    {items}
+  </ul>
+);
 
+  return (
+    <ul
+      key={idx}
+      className={cx(
+        "list-none ml-5 leading-tight mb-2 space-y-1", // list-none pour masquer les bullets natifs
+        colors.list
+      )}
+    >
+      {items}
+    </ul>
+  );
+}
+
+case "list-item":
+  // Si tu utilises le renderer "list" ci-dessus, tu peux enlever ce case.
+  // Sinon, aligne-le sur la même technique ::before :
+  return (
+    <li
+      key={idx}
+      className={cx(
+        "relative mb-1 pl-6  ",
+        "before:content-['→'] before:absolute before:left-0 before:top-[0.35em] before:font-semibold",
+        colors.list,
+        colors.before
+      )}
+    >
+      {renderChildren(node.children, idx)}
+    </li>
+  );
+
+
+    
       case "quote":
         return (
           <blockquote key={idx} className={cx("border-l-4 pl-3 italic my-3", colors.quote)}>

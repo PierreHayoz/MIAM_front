@@ -27,7 +27,6 @@ function discoverProgramLabel(locale) {
 }
 
 export default async function HomePage({ params: paramsPromise }) {
-  // ✅ IMPORTANT: params est une Promesse — on l'attend
   const { locale: rawLocale } = await paramsPromise;
   const locale = rawLocale ?? "fr";
 

@@ -8,7 +8,7 @@ export default function LogoBarsWave({
   bars = 160,
   background = 'transparent',
   fit = 'contain',       // contain | cover | stretch
-  amplitude = 50,
+  amplitude = 20,
   frequency = 0.02,
   baseSpeed = 1,
   hoverRadius = 200,
@@ -34,6 +34,9 @@ export default function LogoBarsWave({
   });
   const holdRef = useRef({ t: 0 }); // temps d’appui cumulé
 
+  const isTouchDevice =
+    typeof window !== 'undefined' && matchMedia?.('(pointer: coarse)').matches;
+
   // charge l'image
   useEffect(() => {
     const image = new Image();
@@ -44,21 +47,24 @@ export default function LogoBarsWave({
     return () => image.removeEventListener('load', onLoad);
   }, [src]);
 
-  // offscreen (une fois)
+  // crée le canvas offscreen une fois
   useEffect(() => {
     if (!offscreenRef.current) {
       offscreenRef.current = document.createElement('canvas');
     }
   }, []);
 
-  // responsive largeur (100%)
+  // resize responsive
   useEffect(() => {
     const canvas = canvasRef.current;
     const offscreen = offscreenRef.current;
     if (!canvas || !offscreen) return;
 
     function resize() {
-      const dpr = window.devicePixelRatio || 1;
+      const sysDpr = window.devicePixelRatio || 1;
+      // cap DPR selon device
+      const dpr = isTouchDevice ? Math.min(1.5, sysDpr) : Math.min(2, sysDpr);
+
       const cssWidth = canvas.clientWidth || window.innerWidth;
       const cssHeight = height + 2 * padYProp;
 
@@ -68,14 +74,16 @@ export default function LogoBarsWave({
 
       offscreen.width = canvas.width;
       offscreen.height = canvas.height;
+
+      canvas.dataset.dpr = String(dpr);
     }
 
     resize();
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', resize, { passive: true });
     return () => window.removeEventListener('resize', resize);
-  }, [height, padYProp]);
+  }, [height, padYProp, isTouchDevice]);
 
-  // souris + maintenir
+  // gestion pointeur / touch
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -89,22 +97,33 @@ export default function LogoBarsWave({
     };
     const onEnter = () => {
       mouseRef.current.inside = true;
-      smoothRef.current.targetInfluence = 1; // hover ON
+      smoothRef.current.targetInfluence = 1;
     };
     const onLeave = () => {
       mouseRef.current.inside = false;
       mouseRef.current.holding = false;
-      smoothRef.current.targetInfluence = idleInfluence; // retour idle
+      smoothRef.current.targetInfluence = idleInfluence;
+    };
+    const onDown = (e) => {
+      mouseRef.current.holding = true;
+      if (e.clientX) onMove(e);
+    };
+    const onUp = () => {
+      mouseRef.current.holding = false;
     };
 
+    canvas.addEventListener('pointermove', onMove, { passive: true });
+    canvas.addEventListener('pointerenter', onEnter, { passive: true });
+    canvas.addEventListener('pointerleave', onLeave, { passive: true });
+    canvas.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointerup', onUp);
 
-    canvas.addEventListener('pointermove', onMove);
-    canvas.addEventListener('pointerenter', onEnter);
-    canvas.addEventListener('pointerleave', onLeave);
     return () => {
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerenter', onEnter);
       canvas.removeEventListener('pointerleave', onLeave);
+      canvas.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointerup', onUp);
     };
   }, [idleInfluence]);
 
@@ -114,7 +133,7 @@ export default function LogoBarsWave({
     smoothRef.current.targetSpeed = baseSpeed;
   }, [baseSpeed]);
 
-  // animation principale (sans phases)
+  // animation principale
   useEffect(() => {
     const canvas = canvasRef.current;
     const offscreen = offscreenRef.current;
@@ -124,6 +143,15 @@ export default function LogoBarsWave({
     const octx = offscreen.getContext('2d');
 
     let last = performance.now();
+
+    // pause hors-écran / onglet caché
+    let inView = true;
+    const io = new IntersectionObserver(([e]) => {
+      inView = !!e?.isIntersecting;
+    });
+    io.observe(canvas);
+    const onVis = () => {};
+    document.addEventListener('visibilitychange', onVis);
 
     function drawLogoToOffscreen(totalW, totalH, dpr) {
       octx.setTransform(1, 0, 0, 1, 0, 0);
@@ -140,16 +168,21 @@ export default function LogoBarsWave({
 
       const iw = img.naturalWidth || 1;
       const ih = img.naturalHeight || 1;
-      let dw = totalW, dh = innerH, dx = 0, dy = padY;
+      let dw = totalW,
+        dh = innerH,
+        dx = 0,
+        dy = padY;
 
       if (fit === 'contain') {
         const s = Math.min(totalW / iw, innerH / ih);
-        dw = iw * s; dh = ih * s;
+        dw = iw * s;
+        dh = ih * s;
         dx = (totalW - dw) / 2;
         dy = padY + (innerH - dh) / 2;
       } else if (fit === 'cover') {
         const s = Math.max(totalW / iw, innerH / ih);
-        dw = iw * s; dh = ih * s;
+        dw = iw * s;
+        dh = ih * s;
         dx = (totalW - dw) / 2;
         dy = padY + (innerH - dh) / 2;
       }
@@ -161,10 +194,12 @@ export default function LogoBarsWave({
     const render = (now) => {
       rafRef.current = requestAnimationFrame(render);
 
+      if (!inView || document.hidden) return;
+
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
 
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Number(canvas.dataset.dpr || 1);
       const totalW = canvas.width;
       const totalH = canvas.height;
       const padY = Math.round(padYProp * dpr);
@@ -180,22 +215,21 @@ export default function LogoBarsWave({
         ctx.clearRect(0, 0, totalW, totalH);
       }
 
+      ctx.imageSmoothingEnabled = false;
+
       const S = smoothRef.current;
       const M = mouseRef.current;
 
-      // ====== lissages ======
-      // souris lissée
+      // ====== easing ======
       const mouseEase = 10;
       const aMouse = 1 - Math.exp(-mouseEase * dt);
       S.x += (M.x - S.x) * aMouse;
       S.y += (M.y - S.y) * aMouse;
 
-      // influence lissée (idle <-> hover)
       const hoverEase = 6;
       const aInf = 1 - Math.exp(-hoverEase * dt);
       S.influence += (S.targetInfluence - S.influence) * aInf;
 
-      // vitesse selon appui
       if (M.holding) {
         holdRef.current.t += dt;
       } else {
@@ -208,48 +242,62 @@ export default function LogoBarsWave({
       const aSpeed = 1 - Math.exp(-speedEase * dt);
       S.speed += (targetSpeed - S.speed) * aSpeed;
 
-      // ====== dessin des barres ======
-const barCount = Math.max(1, Math.floor(bars));      const barW = totalW / barCount;
+      // ====== barres ======
+      const px = totalW / (dpr || 1);
+      const targetBars = Math.min(
+        bars,
+        Math.floor(px * (isTouchDevice ? 0.35 : 0.6))
+      );
+      const barCount = Math.max(8, targetBars);
+      const barW = totalW / barCount;
 
       for (let i = 0; i < barCount; i++) {
-  // bornes source ET destination identiques, à l’entier près
-  const sx = Math.floor((i    ) * totalW / barCount);
-  const sxNext = Math.floor((i + 1) * totalW / barCount);
-  const sw = Math.max(1, sxNext - sx);
+        const sx = Math.floor(i * totalW / barCount);
+        const sxNext = Math.floor((i + 1) * totalW / barCount);
+        const sw = Math.max(1, sxNext - sx);
 
-  const dx = sx;
-  const dw = sw;
+        const dx = sx;
+        const dw = sw;
 
-  const distX = Math.abs(S.x - (dx + dw * 0.5));
-  const fall = Math.exp(-Math.max(0, distX - hoverRadius * dpr) * (falloff / dpr));
+        const distX = Math.abs(S.x - (dx + dw * 0.5));
+        const fall = Math.exp(
+          -Math.max(0, distX - hoverRadius * dpr) * (falloff / dpr)
+        );
 
-  const phase = (now / 1000) * 3 * S.speed + i * frequency * 10;
-  const offset = Math.sin(phase) * (amplitude * dpr) * fall * S.influence;
+        const phase = (now / 1000) * 3 * S.speed + i * frequency * 10;
+        const offset =
+          Math.sin(phase) * (amplitude * dpr) * fall * S.influence;
 
-  const sy = padY;
-  const sh = innerH;
-  const dy = Math.max(-padY, Math.min(padY, offset));
+        const sy = padY;
+        const sh = innerH;
+        const dy = Math.max(-padY, Math.min(padY, offset));
 
-  ctx.drawImage(offscreen, sx, sy, sw, sh, dx, sy + dy, dw, sh);
-}
+        ctx.drawImage(offscreen, sx, sy, sw, sh, dx, sy + dy, dw, sh);
+      }
     };
 
     rafRef.current = requestAnimationFrame(render);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      io.disconnect();
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [
-    img, bars, amplitude, frequency, baseSpeed, maxSpeed, accelRate, releaseRate,
-    hoverRadius, falloff, background, fit, padYProp
+    img, bars, amplitude, frequency, baseSpeed, maxSpeed,
+    accelRate, releaseRate, hoverRadius, falloff, background,
+    fit, padYProp, isTouchDevice
   ]);
 
   return (
     <canvas
-    className='px-4'
       ref={canvasRef}
+      className="px-4 select-none"
       style={{
         display: 'block',
         width: '100%',
         height: `${height + 2 * padYProp}px`,
         cursor: 'pointer',
+        touchAction: 'pan-y', // évite le pinch/scroll parasite sur mobile
       }}
     />
   );

@@ -178,7 +178,7 @@ export default function Navigation({ currentLocale, nav = [], alternatesFromServ
   ].join(" ")}
 >
 
-      <div className=" mx-auto flex items-center h-20 justify-between p-4">
+      <div className=" bg-white mx-auto flex items-center h-20 justify-between p-4">
         <div className="hidden md:flex items-center justify-between w-full">
           <Link href={homeHref} className="inline-flex items-center">
             <Image src="/logo/MIAM.svg" width={100} height={80} alt="MIAM" className="w-32" />

@@ -20,11 +20,7 @@ export default function RevealRowClient({
   inViewMargin = '-20% 0px -60% 0px',
   inViewAmount = 0.6,
   forceMobile = false,
-
-  // ✅ NEW: couleur de texte de la ligne (par défaut gris)
   rowTextClassName = 'text-MIAMgreytext text-sm group',
-
-  // ✅ NEW: couleur de texte du popover (blanc ou noir selon bg)
   revealTextClassName = 'text-white',
 }) {
   const isMobile = forceMobile || useIsMobile();
@@ -33,37 +29,48 @@ export default function RevealRowClient({
   const isActive = activateOnMobile && isMobile && inView;
 
   const Title = href ? (
-    <a href={href} className={clsx(titleClassName, isActive && ' translate-x-8')}>{title}</a>
+    <a href={href} className={clsx(titleClassName, isActive && 'translate-x-2')}>
+      {title}
+    </a>
   ) : (
-    <div className={clsx(titleClassName, isActive && ' translate-x-8')}>{title}</div>
+    <div className={clsx(titleClassName, isActive && 'translate-x-2')}>{title}</div>
   );
 
   return (
-    <div ref={rowRef} className={`${rowClassName } group flex items-center`}>
-      <div className={clsx('flex items-center gap-2 w-full ', rowTextClassName)}>
+    <div ref={rowRef} className={clsx(rowClassName, 'group flex items-center')}>
+      {/* 👇 relative + padding pour l’icône */}
+      <div className={clsx('relative flex items-center gap-2 w-full pl-6', rowTextClassName)}>
         {arrow && (
           <span
+            aria-hidden
             className={clsx(
-              'opacity-0 group-hover:opacity-100 absolute -left-8 group-hover:left-0 duration-500',
-              isActive && 'opacity-100 left-0 scale-2'
+              // position fixe, jamais hors cadre
+              'absolute left-0 top-1/2 -translate-y-1/2 text-current',
+              // états par défaut
+              'opacity-0 -translate-x-2 transition-[opacity,transform] duration-300',
+              // au hover (desktop)
+              'group-hover:opacity-100 group-hover:translate-x-0',
+              // au scroll (mobile)
+              isActive && 'opacity-100 translate-x-0'
             )}
-          >→</span>
+          >
+            →
+          </span>
         )}
-        <div className=" w-full"> {Title}</div>
-       <div
-        className={clsx(
-          'absolute top-12 pointer-events-none w-fit z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ',
-          revealPadding,
-          sideClasses,
-          bg,
-          revealTextClassName,      // << couleur du contenu du popover
-          isActive && 'opacity-100'
-        )}
-      >
-        {children}
+        <div className="w-full">{Title}</div>
+        <div
+          className={clsx(
+            'absolute top-12 pointer-events-none w-fit z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300',
+            revealPadding,
+            sideClasses,
+            bg,
+            revealTextClassName,
+            isActive && 'opacity-100'
+          )}
+        >
+          {children}
+        </div>
       </div>
-      </div>
-
     </div>
   );
 }

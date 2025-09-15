@@ -36,7 +36,7 @@ export default function DirectoryReveal({
         return (
             <div >
                 {thumb && (
-                    <div className="relative overflow-hidden rounded-lg w-full mb-3">
+                    <div className="relative overflow-hidden  w-full mb-3">
                         <Image
                             src={thumb}
                             alt={name}
@@ -46,7 +46,6 @@ export default function DirectoryReveal({
                         />
                     </div>
                 )}
-                <h4 className=" font-semibold">{name}</h4>
                 {inline ? <div className="text-xs opacity-70 mb-2">{inline}</div> : null}
 
                 <div className="prose prose-sm max-w-none">
