@@ -100,7 +100,7 @@ function formatDoorToEndRange(e, locale) {
 }
 export default async function EventPage(props) {
   const { params, searchParams } = props
-  const { locale, slug } = await params           // ✅ on attend params
+  const { locale, slug } = await params
   const sp = await searchParams
   const onParam = Array.isArray(sp?.on) ? sp.on[0] : sp?.on;
 
@@ -108,18 +108,15 @@ export default async function EventPage(props) {
   console.log(e)
   if (!e) return notFound();
 
-  // — Global config (traduisible) —
   const global = await getGlobal({ locale });
   const globalBlocks = Array.isArray(global?.blocks) ? global.blocks : [];
   const sug = globalBlocks.find(
     (b) => (b.__component || b.component || b.type) === "shared.events-suggestions"
   );
 
-  // — Suggestions dynamiques —
   const limit = Number(sug?.limit ?? 3);
   const exclude = sug?.excludeCurrent === true;
 
-  // sur-fetch pour avoir de la marge après filtre client
   const overfetch = Math.max(limit, 1) + 5;
 
   const rawSuggestions = sug
@@ -127,15 +124,12 @@ export default async function EventPage(props) {
       locale,
       limit: overfetch,
       categories: Array.isArray(e.categories) ? e.categories : [],
-      // on exclut systématiquement par id côté requête
       excludeId: e.id,
-      // et on honore le toggle pour slug/documentId
       excludeDocumentId: exclude ? e.documentId : undefined,
       excludeSlug: exclude ? e.slug : undefined,
     })
     : [];
 
-  // CEINTURE + BRETELLES : filtre client contre toute régression serveur
   const suggestions = rawSuggestions
     .filter(
       (x) =>
@@ -149,12 +143,10 @@ export default async function EventPage(props) {
   const selectedDate = typeof onParam === "string" ? onParam.slice(0, 10) : null;
 
 
-  // occurrence correspondante
   const occ = selectedDate
     ? (Array.isArray(e.occurrences) ? e.occurrences.find(o => o.date === selectedDate) : null)
     : null;
 
-  // vue projetée pour l’affichage
   const evView = occ ? {
     ...e,
     startDate: occ.date,

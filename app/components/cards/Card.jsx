@@ -74,6 +74,26 @@ function blocksToPlainText(blocks) {
 
   return collect(blocks, []).join(" ").replace(/\s+/g, " ").trim();
 }
+// Dans Card.jsx, ajoute ce helper (copie allégée de ta page event)
+function doorOpeningToTime(door, locale) {
+  if (!door) return null;
+  // cas 1: doorOpening déjà string "HH:mm"
+  if (typeof door === "string" && /^\d{1,2}:\d{2}$/.test(door)) return door;
+
+  // cas 2: objet normalisé { time, iso, ... }
+  if (door && typeof door === "object") {
+    if (typeof door.time === "string" && /^\d{1,2}:\d{2}$/.test(door.time)) return door.time;
+    if (door.iso) {
+      try {
+        return new Date(door.iso).toLocaleTimeString(
+          (locale || "fr").startsWith("fr") ? "fr-CH" : locale,
+          { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Zurich" }
+        );
+      } catch {}
+    }
+  }
+  return null;
+}
 
 const Card = ({
   index,
@@ -86,6 +106,7 @@ const Card = ({
   startTime,
   endTime,
   description,
+  doorOpening,
   descriptionBlocks,
   contentBlocks = null,
   categories = [],
@@ -110,8 +131,17 @@ const Card = ({
     return s || e || null;
   };
 
-  const dateLabel = formatDateRange(startDate, endDate);
-  const timeLabel = formatTimeRange(startTime, endTime);
+const dateLabel = formatDateRange(startDate, endDate);
+
+// 1) on extrait une vraie string HH:mm depuis doorOpening (objet ou string)
+const doorOpeningTime = doorOpeningToTime(doorOpening, locale);
+
+// 2) Affichage voulu: doorOpening → endTime
+//    Fallback (optionnel) : si pas de doorOpening, on retombe sur startTime → endTime
+const timeLabel = doorOpeningTime
+  ? formatTimeRange(doorOpeningTime, endTime)
+  : formatTimeRange(startTime, endTime); // <-- retire ce fallback si tu préfères afficher rien
+
 
   const hoverIdxRef = useRef(null);
   if (hoverIdxRef.current === null) {
