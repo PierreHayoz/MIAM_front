@@ -513,7 +513,7 @@ export async function getEvents({
     "populate[cover]": "true",
     "populate[occurences]": "true",
 
-"opulate[prices]": "true",
+"populate[prices]": "true",
     "populate[event_categories]": "true",
     "populate[gallery][populate][image]": "true",
     // tri stable pour l’archives/liste

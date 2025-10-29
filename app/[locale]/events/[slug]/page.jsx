@@ -33,24 +33,6 @@ function ctaLabel(locale, isReservation) {
 }
 
 
-function doorOpeningLabel(locale) {
-  const lang = (locale || "fr").toLowerCase().split("-")[0]; // "fr-CH" -> "fr"
-  switch (lang) {
-    case "fr": return "Ouverture des portes";
-    case "en": return "Doors opening";
-    case "de": return "Türöffnung";
-    default: return "Doors opening"; // fallback
-  }
-}
-
-
-function formatTimeRange(e) {
-  const { startTime, endTime } = e || {};
-  if (!startTime && !endTime) return null;
-  if (startTime && endTime) return `${startTime} – ${endTime}`;
-  return startTime || endTime || null;
-}
-
 function formatDoorOpeningDisplay(door, locale) {
   if (!door) return null;
   if (door.time) return door.time; // cas le plus fréquent
@@ -147,13 +129,12 @@ export default async function EventPage(props) {
     ? (Array.isArray(e.occurrences) ? e.occurrences.find(o => o.date === selectedDate) : null)
     : null;
 
-  const evView = occ ? {
-    ...e,
-    startDate: occ.date,
-    endDate: occ.date,
-    startTime: occ.startTime ?? e.startTime ?? null,
-    endTime: occ.endTime ?? e.endTime ?? null,
-  } : e;
+    const evView = occ ? {
+        ...e,
+        // on NE touche pas aux dates, on ne prend que les horaires éventuels de l'occurrence
+        startTime: occ.startTime ?? e.startTime ?? null,
+        endTime:   occ.endTime   ?? e.endTime   ?? null,
+      } : e;
 
 const timeRange = formatDoorToEndRange(evView, locale);
   const doorOpeningDisplay = formatDoorOpeningDisplay(e.doorOpening, locale);
@@ -165,9 +146,9 @@ const timeRange = formatDoorToEndRange(evView, locale);
         <header className="col-span-4 md:col-span-2 ">
           <h1 className="text-3xl">{e.title}</h1>
           <p className="text-MIAMviolet bg-grey text-lg">
-  {formatEventDateRange(evView)}
-  {timeRange ? ` · ${timeRange}` : ""}
-</p>
+   {formatEventDateRange(e)} {/* plage réelle de l’événement */}
+   {timeRange ? ` · ${timeRange}` : ""} {/* horaires de l’occurrence si présente */}
+ </p>
 
 
           {concertStartTime && (

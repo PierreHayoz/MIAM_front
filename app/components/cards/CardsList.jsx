@@ -1,7 +1,7 @@
 // app/components/cards/CardsList.jsx
 import FiltersClient from '../filters/FiltersClient';
 import Card from './Card';
-
+import { formatEventDateRange, formatDoorToEndRange } from "@/app/lib/events-utils";
 // ---------- helpers ----------
 function normalize(s = '') {
   return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -29,33 +29,38 @@ const startOfYear = (d = new Date()) => new Date(d.getFullYear(), 0, 1);
 const endOfYear = (d = new Date()) => new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999);
 
 function range(t) {
-  if (t === 'week')  return [startOfWeek(),  endOfWeek()];
+  if (t === 'week') return [startOfWeek(), endOfWeek()];
   if (t === 'month') return [startOfMonth(), endOfMonth()];
-  if (t === 'year')  return [startOfYear(),  endOfYear()];
+  if (t === 'year') return [startOfYear(), endOfYear()];
   return [null, null];
 }
 
 // Aplatis : 1 instance par occurrence ; s'il n'y a pas d'occurrence on garde la date de base
-function buildInstances(events) {
-  const out = [];
+function buildInstances(events, locale) {
+    const out = [];
   for (const e of events) {
     const occ = Array.isArray(e.occurrences) ? e.occurrences.filter(o => o?.date) : [];
+    const rangeLabel = formatEventDateRange(e, locale);
     if (occ.length === 0) {
-      out.push({
+      const inst = {
         ...e,
         __occKey: `${e.id}|${e.startDate || 'no-date'}`,
-      });
+      };
+      const timeLabel = formatDoorToEndRange(inst, locale);
+      out.push({ ...inst, __dateLabel: rangeLabel, __timeLabel: timeLabel });
       continue;
     }
     for (const o of occ) {
-      out.push({
+      const inst = {
         ...e,
         startDate: o.date,
         endDate: o.date,
         startTime: o.startTime ?? e.startTime,
         endTime: o.endTime ?? e.endTime,
         __occKey: `${e.id}|${o.date}|${o.startTime ?? ''}`,
-      });
+     };
+     const timeLabel = formatDoorToEndRange(inst, locale);
+     out.push({ ...inst, __dateLabel: rangeLabel, __timeLabel: timeLabel });
     }
   }
   return out;
@@ -65,7 +70,7 @@ function buildInstances(events) {
 function matchTime(instance, rs, re) {
   if (!rs || !re) return true;
   const start = instance.startDate ? d0(instance.startDate) : null;
-  const end   = instance.endDate   ? d1(instance.endDate)   : start;
+  const end = instance.endDate ? d1(instance.endDate) : start;
   if (start && end) return end >= rs && start <= re;
   return false;
 }
@@ -81,8 +86,8 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
     .sort((a, b) => a.localeCompare(b));
 
   // 1) aplatir en instances
-  const instances = buildInstances(events)
-    .sort((a, b) => (a.startDate || '9999-12-31').localeCompare(b.startDate || '9999-12-31'));
+  const instances = buildInstances(events, locale)
+  .sort((a, b) => (a.startDate || '9999-12-31').localeCompare(b.startDate || '9999-12-31'));
 
   // 2) filtrage sur les instances
   const filtered = instances.filter(e => {
@@ -91,9 +96,9 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
         .filter(Boolean)
         .join(' ')
     );
-    const matchQ   = !q || hay.includes(q);
+    const matchQ = !q || hay.includes(q);
     const matchCat = cats.length === 0 || (e.categories ?? []).some(c => cats.includes(c));
-    const matchT   = matchTime(e, rs, re);
+    const matchT = matchTime(e, rs, re);
     return matchQ && matchCat && matchT;
   });
 
@@ -115,7 +120,13 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
           <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-0">
             {filtered.map((e, i) => (
               <div key={e.__occKey} className="break-inside-avoid">
-                <Card {...e} locale={locale} index={i} />
+                <Card
+                 {...e}
+                 locale={locale}
+                 index={i}
+                 dateLabel={e.__dateLabel}
+                 timeLabel={e.__timeLabel}
+               />
               </div>
             ))}
           </div>

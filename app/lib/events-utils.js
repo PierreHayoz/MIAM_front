@@ -1,11 +1,18 @@
 // file: app/lib/events-utils.js
 
 const TIMEZONE = "Europe/Zurich";
-
+export function i18nLocale(locale) {
+  const l = String(locale || "fr").toLowerCase();
+  if (l.startsWith("fr")) return "fr-CH";
+  if (l.startsWith("de")) return "de-CH";
+  if (l.startsWith("it")) return "it-CH";
+  if (l.startsWith("en")) return "en-GB";
+  return "fr-CH";
+}
 // Date en timezone locale (retourne un Date UTC correspondant au local time demandé)
 export function dateInTimeZone({ timeZone = TIMEZONE, year, month, day, hour = 0, minute = 0, second = 0 }) {
   const asIfUTC = Date.UTC(year, month - 1, day, hour, minute, second);
- const fmt = new Intl.DateTimeFormat("en-US", {
+  const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",
     month: "2-digit",
@@ -23,8 +30,8 @@ export function dateInTimeZone({ timeZone = TIMEZONE, year, month, day, hour = 0
     Number(parts.hour), Number(parts.minute), Number(parts.second)
   );
   const offsetMs = projected - asIfUTC;
- // on le RETIRE pour obtenir l’instant UTC correct
- return new Date(asIfUTC - offsetMs);
+  // on le RETIRE pour obtenir l’instant UTC correct
+  return new Date(asIfUTC - offsetMs);
 }
 
 // Parse "YYYY-MM-DD" + "HH:mm" en Europe/Zurich
@@ -106,14 +113,51 @@ function ymdInTZ(d, timeZone = TIMEZONE) {
   // "YYYY-MM-DD" en timeZone cible
   return new Intl.DateTimeFormat("en-CA", {
     timeZone, year: "numeric", month: "2-digit", day: "2-digit"
-  }).format(d);}
-
-export function formatEventDateRange(e, locale = "fr-CH", timeZone = TIMEZONE) {
-  const start = getEventStartDate(e);
-  const end = getEventEndDate(e) || start;
-  if (!start && !end) return "";
-  const fmt = new Intl.DateTimeFormat(locale, { timeZone, day: "2-digit", month: "short", year: "numeric" });
- const same = start && end && ymdInTZ(start, timeZone) === ymdInTZ(end, timeZone);
- return same ? fmt.format(start || end) : `${fmt.format(start)} → ${fmt.format(end)}`;
+  }).format(d);
 }
 
+export function formatEventDateRange(e, locale = "fr-CH", timeZone = TIMEZONE) {
+  const loc = i18nLocale(locale); const start = getEventStartDate(e);
+  const end = getEventEndDate(e) || start;
+  if (!start && !end) return "";
+   const fmt = new Intl.DateTimeFormat(loc, { timeZone, day: "2-digit", month: "short", year: "numeric" });  const same = start && end && ymdInTZ(start, timeZone) === ymdInTZ(end, timeZone);
+  return same ? fmt.format(start || end) : `${fmt.format(start)} → ${fmt.format(end)}`;
+}
+
+// --- Heures / portes : helpers d'affichage cohérents page & cards ---------
+export function timeDisplay(value, locale = "fr-CH", timeZone = TIMEZONE) {
+    const loc = i18nLocale(locale);  if (!value) return null;
+  // déjà "HH:mm"
+  if (typeof value === "string" && /^\d{1,2}:\d{2}$/.test(value)) return value;
+  // ISO/Date → HH:mm (Europe/Zurich)
+  try {
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) {
+       return d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit", timeZone });    }
+  } catch { }
+  return null;
+}
+
+export function formatDoorOpeningDisplay(door, locale = "fr-CH", timeZone = TIMEZONE) {
+    const loc = i18nLocale(locale);  if (!door) return null;
+  // string "HH:mm"
+  if (typeof door === "string" && /^\d{1,2}:\d{2}$/.test(door)) return door;
+  // objet normalisé { time, iso, raw, ... }
+  if (typeof door === "object") {
+    if (typeof door.time === "string" && /^\d{1,2}:\d{2}$/.test(door.time)) return door.time;
+    const iso = door.iso || (typeof door.raw === "string" && door.raw.includes("T") ? door.raw : null);
+    if (iso) {
+      try {
+        return new Date(iso).toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit", timeZone });      } catch { }
+    }
+  }
+  return null;
+}
+
+// Affiche "porte → fin" si possible, sinon l’un des deux, sinon null
+export function formatDoorToEndRange(e, locale = "fr-CH", timeZone = TIMEZONE) {
+  const door = formatDoorOpeningDisplay(e?.doorOpening, locale, timeZone);
+  const end = timeDisplay(e?.endTime, locale, timeZone);
+  if (door && end) return `${door} – ${end}`;
+  return door || end || null;
+}

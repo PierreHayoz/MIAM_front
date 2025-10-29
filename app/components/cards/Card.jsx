@@ -1,10 +1,12 @@
+// app/components/cards/Card.jsx
 "use client";
-import { useRef, useMemo } from "react";
+
+import { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CategoryPills from "../ui/CategoryPills";
 
-/** Desktop hover classes (cohérentes ≥ md) */
+/** Classes de fond au hover (desktop) et mobile */
 const HOVER_BG_CLASSES = [
   "md:hover:bg-MIAMblack",
   "md:hover:bg-MIAMviolet",
@@ -19,14 +21,11 @@ const MOBILE_BG_CLASSES = [
   "bg-MIAMlime",
 ];
 
-/** RNG: crypto si dispo, sinon Math.random */
-function randUint() {
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    const a = new Uint32Array(1);
-    crypto.getRandomValues(a);
-    return a[0] >>> 0;
-  }
-  return (Math.random() * 0xffffffff) >>> 0;
+/** Hash déterministe (évite l’aléatoire SSR/Client) */
+function djb2(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+  return h >>> 0;
 }
 
 /** ====== Utils preview texte ====== */
@@ -74,26 +73,6 @@ function blocksToPlainText(blocks) {
 
   return collect(blocks, []).join(" ").replace(/\s+/g, " ").trim();
 }
-// Dans Card.jsx, ajoute ce helper (copie allégée de ta page event)
-function doorOpeningToTime(door, locale) {
-  if (!door) return null;
-  // cas 1: doorOpening déjà string "HH:mm"
-  if (typeof door === "string" && /^\d{1,2}:\d{2}$/.test(door)) return door;
-
-  // cas 2: objet normalisé { time, iso, ... }
-  if (door && typeof door === "object") {
-    if (typeof door.time === "string" && /^\d{1,2}:\d{2}$/.test(door.time)) return door.time;
-    if (door.iso) {
-      try {
-        return new Date(door.iso).toLocaleTimeString(
-          (locale || "fr").startsWith("fr") ? "fr-CH" : locale,
-          { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Zurich" }
-        );
-      } catch {}
-    }
-  }
-  return null;
-}
 
 const Card = ({
   index,
@@ -110,59 +89,22 @@ const Card = ({
   descriptionBlocks,
   contentBlocks = null,
   categories = [],
+
+  // 🔒 labels pré-calculés côté serveur (pour éviter les mismatches d’hydratation)
+  dateLabel,
+  timeLabel,
+
+  // pour le hachage stable
+  __occKey,
 }) => {
-  const formatDateRange = (s, e) => {
-    if (!s) return null;
-    const fmt = new Intl.DateTimeFormat("fr-CH", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      timeZone: "Europe/Zurich",
-    });
-    const start = fmt.format(new Date(s));
-    if (!e || e === s) return start;
-    const end = fmt.format(new Date(e));
-    return `${start} → ${end}`;
-  };
+  // ---- Styles déterministes (pas d’aléatoire au render) ----
+  const seed = djb2(`${__occKey || slug || title}|${index ?? 0}`);
 
-  const formatTimeRange = (s, e) => {
-    if (!s && !e) return null;
-    if (s && e) return `${s} – ${e}`;
-    return s || e || null;
-  };
-
-const dateLabel = formatDateRange(startDate, endDate);
-
-// 1) on extrait une vraie string HH:mm depuis doorOpening (objet ou string)
-const doorOpeningTime = doorOpeningToTime(doorOpening, locale);
-
-// 2) Affichage voulu: doorOpening → endTime
-//    Fallback (optionnel) : si pas de doorOpening, on retombe sur startTime → endTime
-const timeLabel = doorOpeningTime
-  ? formatTimeRange(doorOpeningTime, endTime)
-  : formatTimeRange(startTime, endTime); // <-- retire ce fallback si tu préfères afficher rien
-
-
-  const hoverIdxRef = useRef(null);
-  if (hoverIdxRef.current === null) {
-    let r = randUint();
-    let idx = r % HOVER_BG_CLASSES.length;
-    if (HOVER_BG_CLASSES[idx] === "md:hover:bg-MIAMblack") {
-      r = randUint();
-      idx = r % HOVER_BG_CLASSES.length;
-    }
-    hoverIdxRef.current = idx;
-  }
-  const hoverBgClass = HOVER_BG_CLASSES[hoverIdxRef.current];
-
-  const mobileIdxRef = useRef(null);
-  if (mobileIdxRef.current === null) {
-    mobileIdxRef.current = randUint() % MOBILE_BG_CLASSES.length;
-  }
+  const hoverBgClass = HOVER_BG_CLASSES[seed % HOVER_BG_CLASSES.length];
   const mobileBgClass =
     typeof index === "number" && index % 2 === 1
       ? "bg-transparent"
-      : MOBILE_BG_CLASSES[mobileIdxRef.current];
+      : MOBILE_BG_CLASSES[(seed >>> 3) % MOBILE_BG_CLASSES.length];
 
   const isMobileDark = ["bg-MIAMblack", "bg-MIAMviolet", "bg-MIAMtomato"].includes(mobileBgClass);
   const baseTextClass = isMobileDark ? "text-MIAMwhite md:text-MIAMblack" : "text-MIAMblack";
@@ -170,9 +112,11 @@ const timeLabel = doorOpeningTime
     ? "border-MIAMwhite text-MIAMwhite md:border-MIAMblack md:text-MIAMblack"
     : "border-MIAMblack text-MIAMblack";
 
+  // image blend selon le fond
   const imageBaseMobileClass =
     mobileBgClass === "bg-MIAMblack" ? "mix-blend-lighten md:mix-blend-darken" : "mix-blend-darken";
 
+  // variations au hover selon la couleur
   let hoverTextClass = "md:hover:text-MIAMblack";
   let imageHoverClass = "md:group-hover:invert duration-500";
   let categoryHoverClass = "md:group-hover:text-MIAMblack md:group-hover:border-MIAMblack";
@@ -193,6 +137,7 @@ const timeLabel = doorOpeningTime
     categoryHoverClass = "md:group-hover:text-MIAMblack md:group-hover:border-MIAMblack";
   }
 
+  // ---- Extrait un texte de preview (déterministe) ----
   const blocksForPreview =
     Array.isArray(descriptionBlocks) && descriptionBlocks.length > 0
       ? descriptionBlocks
@@ -209,8 +154,10 @@ const timeLabel = doorOpeningTime
       return safeTruncate(plain, 120);
     }
     return "";
+    // description/blocksForPreview sont stables d’un render à l’autre
   }, [description, blocksForPreview]);
 
+  // ---- Lien vers l’event (préserve la date d’occurrence via `on`) ----
   const href = {
     pathname: `/${locale || "fr"}/events/${slug}`,
     query: startDate ? { on: startDate } : undefined,
@@ -236,20 +183,17 @@ const timeLabel = doorOpeningTime
             width={800}
             height={800}
             alt={title}
-            className={[
-              "transition duration-500",
-              imageBaseMobileClass,
-              imageHoverClass,
-            ].join(" ")}
+            className={["transition duration-500", imageBaseMobileClass, imageHoverClass].join(" ")}
             sizes="(min-width:1024px) 33vw, (min-width:768px) 50vw, 100vw"
+            priority={false}
           />
         )}
 
         {(dateLabel || timeLabel) && (
-          <div className="flex justify-between w-full gap-2 mt-2">
-            <span>{dateLabel}</span>
-            {timeLabel && <span>{timeLabel}</span>}
-          </div>
+          <p className="mt-2">
+            {dateLabel}
+            {timeLabel ? ` · ${timeLabel}` : ""}
+          </p>
         )}
 
         {previewText && (
