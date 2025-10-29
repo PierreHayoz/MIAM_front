@@ -1,6 +1,7 @@
 // app/components/cms/EventsSuggestionsBlock.jsx
 import Card from "@/app/components/cards/Card";
 import { getUpcomingEvents } from "@/app/lib/strapi";
+import { formatEventDateRange, formatDoorToEndRange } from "@/app/lib/events-utils";
 import RichTextServer from "@/app/components/ui/RichText";
 
 export default async function EventsSuggestionsBlock({
@@ -58,7 +59,11 @@ export default async function EventsSuggestionsBlock({
 
       {/* Masonry comme CardsList */}
       <div className="columns-1 sm:columns-2 lg:columns-3  gap-0">
-        {filtered.map((s, i) => (
+      {filtered.map((s, i) => {
+          const dateLabel = formatEventDateRange(s, locale);      // ✅ même format que la page event
+          const timeLabel = formatDoorToEndRange(s, locale);      // ✅ "porte → fin" si dispo
+          const occKey = `${s.id || s.documentId || s.slug}|${s.startDate || "no-date"}`;
+          return (
           <div key={`${s.documentId || s.id}-${s.slug}`} className="break-inside-avoid mb-4">
             <Card
               index={i}
@@ -71,12 +76,17 @@ export default async function EventsSuggestionsBlock({
               startTime={s.startTime}
               endTime={s.endTime}
               description={s.description}
+              doorOpening={s.doorOpening}
               descriptionBlocks={s.descriptionBlocks}
               contentBlocks={s.contentBlocks}
               categories={Array.isArray(s.categories) ? s.categories : []}
+              dateLabel={dateLabel}               
+              timeLabel={timeLabel}              
+              __occKey={occKey}  
             />
           </div>
-        ))}
+                 );
+              })}
       </div>
     </section>
   );
