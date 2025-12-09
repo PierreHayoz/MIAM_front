@@ -55,7 +55,11 @@ const UI = {
     switchToProgramme: 'Programm anzeigen',
   },
 }
-
+const SLUGS = {
+  fr: { programme: 'programme', archives: 'archives' },
+  en: { programme: 'program',   archives: 'archives' },  // ou 'archive' si ta page s'appelle comme ça
+  de: { programme: 'programm',  archives: 'archives' },  // ou 'archiv' si tu as une page dédiée
+}
 const baseLang = (l) => String(l || 'fr').toLowerCase().split('-')[0]
 const t = (l, k) => UI[baseLang(l)]?.[k] ?? UI.en[k] ?? k
 
@@ -79,26 +83,29 @@ export default function FiltersClient({
     [years]
   );
 
-  // URL cible pour basculer Programme ↔ Archives
+    // URL cible pour basculer Programme ↔ Archives
   const altPath = useMemo(() => {
     if (!pathname) return null;
-    const parts = pathname.split('/').filter(Boolean); // ["fr", "programme"] par ex.
+
+    const parts = pathname.split('/').filter(Boolean); // ex: ["fr", "programme"] ou ["en", "program"]
     if (parts.length === 0) return null;
 
-    const next = [...parts];
+    const localeSegment = parts[0];       // "fr", "en", "de"
+    const rest = parts.slice(1);          // ["programme"], ["program"], ["programm"], etc.
 
-    if (mode === 'archive') {
-      const idx = next.indexOf('archives');
-      if (idx === -1) return null;
-      next[idx] = 'programme';
-    } else {
-      const idx = next.indexOf('programme');
-      if (idx === -1) return null;
-      next[idx] = 'archives';
-    }
+    const lang = baseLang(locale);        // "fr" / "en" / "de"
+    const config = SLUGS[lang] ?? SLUGS.fr;
+
+    const targetSlug = mode === 'archive'
+      ? config.programme  // on veut aller vers PROGRAMME
+      : config.archives;  // on veut aller vers ARCHIVES
+
+    // On remplace simplement le premier segment "page" par le slug cible
+    const next = [localeSegment, targetSlug, ...rest.slice(1)];
 
     return '/' + next.join('/');
-  }, [pathname, mode]);
+  }, [pathname, mode, locale]);
+
 
   // état local pour la barre de recherche (debounced)
   const [q, setQ] = useState(sp.get('q') ?? '')
