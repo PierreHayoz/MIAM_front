@@ -35,17 +35,17 @@ export default function IllustrationList() {
 
     return (
         <div className="w-full fixed h-screen bottom-0 left-0 -z-1 ">
-            <motion.div style={{ y }} className="gap-4 p-4 h-[400vh] w-full ">
+            <motion.div style={{ y }} className="flex flex-col gap-4 p-4 h-[400vh] w-full ">
                 {three.map((src, i) => (
-                    <div key={i} className="">
+                    <div key={i} className="h-screen w-screen">
                         <Image
-                        priority
+                            priority
                             key={src}
                             src={src}
                             alt={`Illustration ${i + 1}`}
                             width={200}
                             height={200}
-                            className="w-full h-full opacity-4"
+                            className="w-full h-full md:object-none object-cover opacity-4 "
                         />
                     </div>
                 ))}

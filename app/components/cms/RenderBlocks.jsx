@@ -126,62 +126,91 @@ const commissionGetters = {
         );
         break;
       }
-      case "blocks.events-list": {
-        // config bloc
+            case "blocks.events-list": {
+        // v4/v5 compatible : on passe par attributes si présent
+        const bAttrs = b?.attributes ?? b;
+
+        // catégories possibles (attachées au bloc dans Strapi)
+        const rawCats =
+          (Array.isArray(bAttrs?.categories?.data) && bAttrs.categories.data) ||
+          (Array.isArray(bAttrs?.categories) && bAttrs.categories) ||
+          [];
+
         const cfg = {
-          defaultRange: b.defaultRange ?? "all",
-          showFilters: b.showFilters ?? true,
-          onlyUpcoming: b.onlyUpcoming ?? true,
-          pageSize: b.pageSize ?? 60,
-          sort: b.sort ?? "date_asc",
-          categoriesIds: (b.categories?.data || []).map((x) => x?.id).filter(Boolean),
-          // si tu as documentId côté catégories, tu peux aussi le récupérer ici
+          defaultRange: bAttrs.defaultRange ?? "all",
+          showFilters: bAttrs.showFilters ?? true,
+          onlyUpcoming: bAttrs.onlyUpcoming ?? true,
+          isArchive: bAttrs.isArchive ?? false,   // bool ajouté côté Strapi
+          pageSize: bAttrs.pageSize ?? 60,
+          sort: bAttrs.sort ?? "date_asc",
+          heading: bAttrs.heading,
+          intro: bAttrs.intro,
+          // IDs pour le filtre Strapi
+          categoriesIds: rawCats
+            .map((x) => x?.id ?? x?.attributes?.id ?? null)
+            .filter(Boolean),
+          // Noms pour les filtres UI (⚠️ c’est ça qui alimente fixedCats)
+          categoryNames: rawCats
+            .map((x) => x?.attributes?.name ?? x?.name ?? "")
+            .filter(Boolean),
         };
 
-        // params Strapi (en direct → on évite la construction “filters[${k}]” fragile)
         const params = {};
-        if (cfg.onlyUpcoming) {
-          const t = todayISO();
-          params["filters[$or][0][endDate][$gte]"] = t;
-          params["filters[$or][1][startDate][$gte]"] = t;
+        const today = todayISO();
+
+        if (cfg.isArchive) {
+          // 🔥 ARCHIVES = uniquement le passé
+          params["filters[$or][0][endDate][$lt]"] = today;
+          params["filters[$or][1][startDate][$lt]"] = today;
+          params["sort[0]"] = "startDate:desc";
+          params["sort[1]"] = "endDate:desc";
+        } else if (cfg.onlyUpcoming) {
+          // 🔥 PROGRAMME = uniquement le futur
+          params["filters[$or][0][endDate][$gte]"] = today;
+          params["filters[$or][1][startDate][$gte]"] = today;
+          params.sort = sortParam(cfg.sort);
+        } else {
+          params.sort = sortParam(cfg.sort);
         }
-        // filtre catégories (par IDs) — OK en v4/v5
+
+        // filtre catégories Strapi (optionnel)
         cfg.categoriesIds.forEach((id, i) => {
           params[`filters[event_categories][id][$in][${i}]`] = String(id);
         });
-        params.sort = sortParam(cfg.sort);
+
         params["pagination[pageSize]"] = cfg.pageSize;
 
-        // fetch events (⚠️ locale)
         const events = await getEvents({ locale, params, next: { revalidate: 60 } });
 
-        const tEff =
-          searchParams?.t ??
-          (["week", "month", "year"].includes(cfg.defaultRange) ? cfg.defaultRange : undefined);
-        const spEff = tEff ? { ...searchParams, t: tEff } : searchParams;
+        let spEff = searchParams;
+        if (!cfg.isArchive) {
+          const tEff =
+            searchParams?.t ??
+            (["week", "month", "year"].includes(cfg.defaultRange) ? cfg.defaultRange : undefined);
+          spEff = tEff ? { ...searchParams, t: tEff } : searchParams;
+        }
 
-        // rendu
+        const mode = cfg.isArchive ? "archive" : "default";
+
         out.push(
           <section key={`events-list-${b.id ?? `idx-${idx}`}`} className="mt-8">
-            <div className="grid grid-cols-4 gap-2 px-4">
-              <h2 className="text-3xl md:col-span-1 col-span-4">{cfg.heading}</h2>
-              {cfg.intro ? (
-                <div className="col-span-4 md:col-span-2 text-MIAMgrey">
-                  <div dangerouslySetInnerHTML={{ __html: cfg.intro }} />
-                </div>
-              ) : null}
-            </div>
+            
 
             <CardsListServer
               events={events}
               searchParams={spEff}
               locale={locale}
               showFilters={cfg.showFilters}
+              mode={mode}
+              fixedCats={cfg.categoryNames}   // 👈 alimenté par rawCats ci-dessus
             />
           </section>
         );
         break;
       }
+
+
+
       case "blocks.membres": {
         const items = await getMembres({ locale });
         out.push(

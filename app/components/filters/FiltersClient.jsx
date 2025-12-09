@@ -19,6 +19,8 @@ const UI = {
     what: 'Quoi ?',
     reset: 'Réinitialiser les filtres',
     updating: 'Mise à jour…',
+    switchToArchive: 'Voir les archives',
+    switchToProgramme: 'Voir le programme',
   },
   en: {
     searchPh: 'Search…',
@@ -33,6 +35,8 @@ const UI = {
     what: 'What?',
     reset: 'Reset filters',
     updating: 'Updating…',
+    switchToArchive: 'View archive',
+    switchToProgramme: 'View programme',
   },
   de: {
     searchPh: 'Suchen…',
@@ -47,12 +51,21 @@ const UI = {
     what: 'Was?',
     reset: 'Filter zurücksetzen',
     updating: 'Aktualisiere…',
+    switchToArchive: 'Archiv anzeigen',
+    switchToProgramme: 'Programm anzeigen',
   },
 }
+
 const baseLang = (l) => String(l || 'fr').toLowerCase().split('-')[0]
 const t = (l, k) => UI[baseLang(l)]?.[k] ?? UI.en[k] ?? k
 
-export default function FiltersClient({ allCats = [], locale: explicitLocale }) {
+export default function FiltersClient({
+  allCats = [],
+  locale: explicitLocale,
+  mode = 'default',   // "default" = programme, "archive" = archives
+  years = [],         // années dispo pour les archives
+}) {
+
   const params = useParams()
   const locale = explicitLocale || params?.locale || 'fr'
 
@@ -61,11 +74,38 @@ export default function FiltersClient({ allCats = [], locale: explicitLocale }) 
   const sp = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
+    const yearOptions = useMemo(
+    () => (Array.isArray(years) ? years : []),
+    [years]
+  );
+
+  // URL cible pour basculer Programme ↔ Archives
+  const altPath = useMemo(() => {
+    if (!pathname) return null;
+    const parts = pathname.split('/').filter(Boolean); // ["fr", "programme"] par ex.
+    if (parts.length === 0) return null;
+
+    const next = [...parts];
+
+    if (mode === 'archive') {
+      const idx = next.indexOf('archives');
+      if (idx === -1) return null;
+      next[idx] = 'programme';
+    } else {
+      const idx = next.indexOf('programme');
+      if (idx === -1) return null;
+      next[idx] = 'archives';
+    }
+
+    return '/' + next.join('/');
+  }, [pathname, mode]);
+
   // état local pour la barre de recherche (debounced)
   const [q, setQ] = useState(sp.get('q') ?? '')
 
   const time = sp.get('t') || ''
   const activeCats = useMemo(() => new Set(sp.getAll('cat')), [sp])
+
 
   function commit(params, { replace = false } = {}) {
     const url = params.toString() ? `${pathname}?${params.toString()}` : pathname
@@ -116,8 +156,23 @@ export default function FiltersClient({ allCats = [], locale: explicitLocale }) 
   }
 
   return (
+    <div className="">
+      {altPath && (
+        <div className="pb-8">
+          <button
+            type="button"
+            onClick={() => router.push(altPath)}
+            className="text-sm underline text-MIAMblack hover:text-MIAMgrey"
+          >
+            {mode === 'archive'
+              ? t(locale, 'switchToProgramme')
+              : t(locale, 'switchToArchive')}
+          </button>
+        </div>
+      )}
     <div className="space-y-6 h-full">
       {/* Search */}
+      
       <div className="bg-MIAMlightgrey rounded-full flex items-center gap-2 p-2 w-full">
         <Search aria-hidden className="ml-1" />
         <input
@@ -142,33 +197,62 @@ export default function FiltersClient({ allCats = [], locale: explicitLocale }) 
         )}
       </div>
 
-      {/* Quand ? */}
+           {/* Quand ? */}
       <div>
         <h2 className="text-xl">{t(locale, 'when')}</h2>
         <div className="flex flex-wrap gap-2 pt-2 ">
-          {[
-            { k: '',      label: t(locale, 'allDates') },
-            { k: 'week',  label: t(locale, 'thisWeek') },
-            { k: 'month', label: t(locale, 'thisMonth') },
-            { k: 'year',  label: t(locale, 'thisYear') },
-          ].map(opt => (
-            <button
-              key={opt.k || 'all'}
-              type="button"
-              onClick={() => setTime(opt.k)}
-              className={
-                'px-3 py-1 rounded-full text-sm ' +
-                ((time === (opt.k || ''))
-                  ? 'bg-MIAMblack text-white cursor-pointer'
-                  : 'bg-MIAMlightgrey hover:bg-MIAMgrey duration-500 text-MIAMblack hover:text-black cursor-pointer')
-              }
-              aria-pressed={time === (opt.k || '')}
-            >
-              {opt.label}
-            </button>
-          ))}
+          {mode === 'archive'
+            ? (
+              // Mode ARCHIVES : Toutes les dates + années (2025, 2024, …)
+              [
+                { k: '', label: t(locale, 'allDates') },
+                ...yearOptions.map((y) => ({ k: y, label: y })),
+              ].map((opt) => (
+                <button
+                  key={opt.k || 'all'}
+                  type="button"
+                  onClick={() => setTime(opt.k)}
+                  className={
+                    'px-3 py-1 rounded-full text-sm ' +
+                    ((time === (opt.k || ''))
+                      ? 'bg-MIAMblack text-white cursor-pointer'
+                      : 'bg-MIAMlightgrey hover:bg-MIAMgrey duration-500 text-MIAMblack hover:text-black cursor-pointer')
+                  }
+                  aria-pressed={time === (opt.k || '')}
+                >
+                  {opt.label}
+                </button>
+              ))
+            )
+            : (
+              // Mode PROGRAMME : Toutes les dates / semaine / mois / année
+              [
+                { k: '',      label: t(locale, 'allDates') },
+                { k: 'week',  label: t(locale, 'thisWeek') },
+                { k: 'month', label: t(locale, 'thisMonth') },
+                { k: 'year',  label: t(locale, 'thisYear') },
+              ].map((opt) => (
+                <button
+                  key={opt.k || 'all'}
+                  type="button"
+                  onClick={() => setTime(opt.k)}
+                  className={
+                    'px-3 py-1 rounded-full text-sm ' +
+                    ((time === (opt.k || ''))
+                      ? 'bg-MIAMblack text-white cursor-pointer'
+                      : 'bg-MIAMlightgrey hover:bg-MIAMgrey duration-500 text-MIAMblack hover:text-black cursor-pointer')
+                  }
+                  aria-pressed={time === (opt.k || '')}
+                >
+                  {opt.label}
+                </button>
+              ))
+            )
+          }
         </div>
       </div>
+
+
 
       {/* Quoi ? */}
       <div>
@@ -199,12 +283,11 @@ export default function FiltersClient({ allCats = [], locale: explicitLocale }) 
 
       {/* Reset */}
       <div>
-        <button onClick={reset} type="button" className="text-sm underline text-MIAMgrey hover:text-black">
+        <button onClick={reset} type="button" className="pb-8 text-sm underline text-MIAMgrey hover:text-black">
           {t(locale, 'reset')}
         </button>
       </div>
-
-      {isPending && <div className="text-xs text-MIAMgrey">{t(locale, 'updating')}</div>}
+      </div>
     </div>
   )
 }

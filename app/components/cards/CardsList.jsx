@@ -2,6 +2,7 @@
 import FiltersClient from '../filters/FiltersClient';
 import Card from './Card';
 import { formatEventDateRange, formatDoorToEndRange } from "@/app/lib/events-utils";
+
 // ---------- helpers ----------
 function normalize(s = '') {
   return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -29,15 +30,25 @@ const startOfYear = (d = new Date()) => new Date(d.getFullYear(), 0, 1);
 const endOfYear = (d = new Date()) => new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999);
 
 function range(t) {
+  if (!t) return [null, null];
+
   if (t === 'week') return [startOfWeek(), endOfWeek()];
   if (t === 'month') return [startOfMonth(), endOfMonth()];
   if (t === 'year') return [startOfYear(), endOfYear()];
+
+  // 🔥 t = "2025", "2026", etc. → filtre sur l'année
+  if (/^\d{4}$/.test(String(t))) {
+    const year = Number(t);
+    const d = new Date(year, 0, 1);
+    return [startOfYear(d), endOfYear(d)];
+  }
+
   return [null, null];
 }
 
 // Aplatis : 1 instance par occurrence ; s'il n'y a pas d'occurrence on garde la date de base
 function buildInstances(events, locale) {
-    const out = [];
+  const out = [];
   for (const e of events) {
     const occ = Array.isArray(e.occurrences) ? e.occurrences.filter(o => o?.date) : [];
     const rangeLabel = formatEventDateRange(e, locale);
@@ -58,9 +69,9 @@ function buildInstances(events, locale) {
         startTime: o.startTime ?? e.startTime,
         endTime: o.endTime ?? e.endTime,
         __occKey: `${e.id}|${o.date}|${o.startTime ?? ''}`,
-     };
-     const timeLabel = formatDoorToEndRange(inst, locale);
-     out.push({ ...inst, __dateLabel: rangeLabel, __timeLabel: timeLabel });
+      };
+      const timeLabel = formatDoorToEndRange(inst, locale);
+      out.push({ ...inst, __dateLabel: rangeLabel, __timeLabel: timeLabel });
     }
   }
   return out;
@@ -75,19 +86,50 @@ function matchTime(instance, rs, re) {
   return false;
 }
 
+// 🔥 Années disponibles à partir des instances
+function extractYears(instances) {
+  const set = new Set();
+  for (const e of instances) {
+    const d = e.startDate || e.endDate;
+    if (!d) continue;
+    const y = String(d).slice(0, 4);
+    if (/^\d{4}$/.test(y)) set.add(y);
+  }
+  // 2025, 2024, 2023...
+  return Array.from(set).sort((a, b) => b.localeCompare(a));
+}
+
 // ---------- component ----------
-export default function CardsListServer({ events, searchParams, locale, showFilters = true }) {
-  const q = normalize(searchParams?.q ?? '');
+export default function CardsListServer({
+  events,
+  searchParams,
+  locale,
+  showFilters = true,
+  mode = 'default',      // "default" = programme, "archive" = archives
+  fixedCats = [],        // 👈 catégories forcées (venant du bloc)
+}) {
+
+    const q = normalize(searchParams?.q ?? '');
   const rawCats = searchParams?.cat ?? [];
   const cats = Array.isArray(rawCats) ? rawCats : [rawCats].filter(Boolean);
   const [rs, re] = range(searchParams?.t);
-  // catégories (à partir des events, pas des instances, pour éviter les doublons visuels)
-  const allCats = Array.from(new Set(events.flatMap(e => e.categories ?? [])))
+
+  // catégories présentes dans les events
+  const catsFromEvents = Array.from(new Set(events.flatMap(e => e.categories ?? [])))
     .sort((a, b) => a.localeCompare(b));
+
+  // 🔥 fusion : catégories du bloc + catégories présentes dans les events
+  const allCats = Array.from(
+    new Set([...(fixedCats || []), ...catsFromEvents])
+  ).sort((a, b) => a.localeCompare(b));
+
 
   // 1) aplatir en instances
   const instances = buildInstances(events, locale)
-  .sort((a, b) => (a.startDate || '9999-12-31').localeCompare(b.startDate || '9999-12-31'));
+    .sort((a, b) => (a.startDate || '9999-12-31').localeCompare(b.startDate || '9999-12-31'));
+
+  // 🔥 années pour le mode archive
+  const yearOptions = mode === 'archive' ? extractYears(instances) : [];
 
   // 2) filtrage sur les instances
   const filtered = instances.filter(e => {
@@ -106,12 +148,18 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
     <div className="grid grid-cols-4 w-full">
       <aside className="col-span-4 md:col-span-1 md:sticky md:top-0">
         <div className="md:sticky md:top-24">
-          {showFilters ? <FiltersClient locale={locale} allCats={allCats} /> : null}
+          {showFilters ? (
+            <FiltersClient
+              locale={locale}
+              allCats={allCats}
+              mode={mode}           // 👈 on passe le mode
+              years={yearOptions}    // 👈 et les années (archives)
+            />
+          ) : null}
         </div>
       </aside>
 
       <main className="col-span-4 md:col-span-3 md:px-4">
-
         {filtered.length === 0 ? (
           <div className="text-MIAMgrey py-16 text-center">
             Aucun événement ne correspond à votre recherche.
@@ -121,12 +169,12 @@ export default function CardsListServer({ events, searchParams, locale, showFilt
             {filtered.map((e, i) => (
               <div key={e.__occKey} className="break-inside-avoid">
                 <Card
-                 {...e}
-                 locale={locale}
-                 index={i}
-                 dateLabel={e.__dateLabel}
-                 timeLabel={e.__timeLabel}
-               />
+                  {...e}
+                  locale={locale}
+                  index={i}
+                  dateLabel={e.__dateLabel}
+                  timeLabel={e.__timeLabel}
+                />
               </div>
             ))}
           </div>
